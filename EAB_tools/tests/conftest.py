@@ -39,7 +39,7 @@ def iris_cols(iris: pd.DataFrame, request: pytest.FixtureRequest) -> pd.Series:
         pytest.param(pd.Series(pd.timedelta_range("2000", periods=9)), id='timedelta_series'),
     ]
 )
-def series(request):
+def series(request: pytest.FixtureRequest) -> pd.Series:
     """Return several series with unique dtypes"""
     # Fixture borrowed from pandas from
     # https://github.com/pandas-dev/pandas/blob/5b2fb093f6abd6f5022fe5459af8327c216c5808/pandas/tests/util/test_hashing.py
@@ -48,7 +48,10 @@ def series(request):
 
 pairs = list(itertools.permutations(iris_df.columns, 2))
 @pytest.fixture(params=pairs, ids=map(str, pairs))
-def multiindex(request, iris):
+def multiindex(
+        iris: pd.DataFrame,
+        request: pytest.FixtureRequest
+) -> pd.MultiIndex:
     """Return MultiIndexes created from pairs of iris cols"""
     a_col, b_col = request.param
     a, b = iris[a_col], iris[b_col]
