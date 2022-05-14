@@ -1,4 +1,5 @@
 """Tests for hashing"""
+import matplotlib.pyplot as plt
 import pytest
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from pandas import (
 
 from EAB_tools.util.hashing import (
     hash_df,
+    hash_mpl_fig
 )
 
 
@@ -73,3 +75,35 @@ class TestHashDf:
         style1 = iris.style.highlight_min()
         style2 = iris.style.highlight_max()
         assert hash_df(iris, style1) != hash_df(iris, style2)
+
+class TestHashMPLfig:
+    """Tests for EAB_tools.util.io.hashing.hash_mpl_fig"""
+
+    def test_expected_hash(self):
+        expected = "c89d743"
+
+        # Make up some data
+        x = np.linspace(0, 4 * np.pi, 10**6)
+        y = np.sin(x)
+
+        # Plot made up data
+        fig, ax = plt.subplots()
+        ax.plot(x, y)
+
+        kwargs = dict(max_len=7, usedforsecurity=False)
+        assert hash_mpl_fig(fig, **kwargs) == expected
+
+    def test_basic_consistency(self, mpl_figs_and_axes: plt.Figure):
+        a = hash_mpl_fig(mpl_figs_and_axes)
+        b = hash_mpl_fig(mpl_figs_and_axes)
+        assert a == b
+
+    def test_sensitivity(self, mpl_axes: plt.Axes, seed: int = 0):
+        a = hash_mpl_fig(mpl_axes)
+
+        rng = np.random.default_rng(seed=seed)
+        xy = rng.random(2)
+        color = rng.random(3)
+        mpl_axes.scatter(*xy, c=color)
+        b = hash_mpl_fig(mpl_axes)
+        assert a != b

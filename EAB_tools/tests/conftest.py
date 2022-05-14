@@ -1,16 +1,15 @@
 import itertools
 from pathlib import Path
+from typing import (
+    Callable,
+    Union,
+    Literal
+)
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pytest
-
-
-@pytest.fixture
-def base_path() -> Path:
-    """Get the current folder of the test"""
-    # Thanks to https://stackoverflow.com/a/70111624/9655521
-    return Path(__file__).parent
-
 
 iris_df: pd.DataFrame = pd.read_csv(Path(__file__).parent / "io/data/iris.csv")
 
@@ -57,3 +56,65 @@ def multiindex(
     a, b = iris[a_col], iris[b_col]
     return pd.MultiIndex.from_arrays([a, b])
 
+
+@pytest.fixture(params=[
+    np.sin,  # any -> float
+    pytest.param(lambda arr: np.exp(-arr), id='exp(-x)'),  # any -> float
+    pytest.param(lambda x: x ** 2, id='lambda squared'),  # int -> int and float -> float
+    pytest.param(lambda arr: np.rint(arr).astype(int), id='rint')  # any -> int
+], name='func')
+def plot_func(request: pytest.FixtureRequest) -> Callable:
+    """A variety of funcs callable on numeric ndarrays"""
+    return request.param
+
+
+@pytest.fixture(params=[
+    np.linspace(0, 10 ** -5, dtype=float),
+    np.linspace(0, 499, num=500, dtype='int32'),
+    np.linspace(0, 2**33, 2**10 + 1, dtype='int64')
+], ids=lambda arr: str(arr.dtype))
+def x_values(request: pytest.FixtureRequest) -> np.ndarray:
+    """func inputs of different dtypes"""
+    return request.param
+
+
+@pytest.fixture(params=['fig', 'ax'])
+def _fig_or_ax(request: pytest.FixtureRequest) -> Literal['fig', 'ax']:
+    """Either returns 'fig' or 'ax'"""
+    return request.param
+
+
+@pytest.fixture
+def mpl_plots(
+        func: Callable[[np.ndarray], np.ndarray],
+        x_values: np.ndarray
+) -> tuple[plt.Figure, plt.Axes]:
+    """Returns dict of {fix, ax}, for various funcs and domains"""
+    x = x_values
+    y = func(x)
+    fig, ax = plt.subplots()
+    ax.plot(x, y)
+
+    yield dict(fig=fig, ax=ax)
+    plt.close(fig)
+
+
+@pytest.fixture
+def mpl_axes(mpl_plots: tuple[plt.Figure, plt.Axes]) -> plt.Axes:
+    """Returns a variety of `plt.Axes` objects"""
+    return mpl_plots['ax']
+
+
+@pytest.fixture
+def mpl_figs(mpl_plots: tuple[plt.Figure, plt.Axes]) -> plt.Figure:
+    """Returns a variety of `plt.Figure` objects"""
+    return mpl_plots['fig']
+
+
+@pytest.fixture
+def mpl_figs_and_axes(
+        mpl_plots: tuple[plt.Figure, plt.Axes],
+        _fig_or_ax: Literal['fig', 'ax']
+) -> Union[plt.Figure, plt.Axes]:
+    """Returns either the figure or the axis of various plots"""
+    return mpl_plots[_fig_or_ax]

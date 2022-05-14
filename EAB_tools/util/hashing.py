@@ -6,6 +6,8 @@ from typing import (
     Union
 )
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from EAB_tools.eab_rc import eab_rc
@@ -57,4 +59,21 @@ def hash_df(
     if styler is not None:
         h.update(styler.to_html().encode('UTF8'))
 
+    return h.hexdigest()[:max_len]
+
+
+def hash_mpl_fig(
+        fig: Union[plt.Figure, plt.Axes],
+        max_len: Optional[int] = eab_rc["hash_len"],
+        usedforsecurity: Optional[bool] = False
+) -> str:
+    """Hash a matplotlib figure."""
+    if isinstance(fig, plt.Axes):
+        fig = fig.get_figure()
+    fig.canvas.draw()
+    buf = fig.canvas.buffer_rgba()
+    X = np.asarray(buf)
+
+    h = hashlib.sha1(usedforsecurity=usedforsecurity)
+    h.update(X)
     return h.hexdigest()[:max_len]
