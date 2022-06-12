@@ -1,4 +1,7 @@
 """Tests for hashing"""
+from types import TracebackType
+import tkinter
+
 import matplotlib.pyplot as plt
 import pytest
 import numpy as np
@@ -76,6 +79,12 @@ class TestHashDf:
         style2 = iris.style.highlight_max()
         assert hash_df(iris, style1) != hash_df(iris, style2)
 
+
+def _is_tkinter_error(err: tuple[type, Exception, TracebackType], *args):
+    return isinstance(err[1], tkinter.TclError)
+
+
+@pytest.mark.flaky(rerun_filter=_is_tkinter_error, max_runs=5)
 class TestHashMPLfig:
     """Tests for EAB_tools.util.io.hashing.hash_mpl_fig"""
 
