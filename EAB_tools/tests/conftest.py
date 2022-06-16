@@ -6,6 +6,7 @@ from typing import (
     Literal
 )
 
+import dateutil
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -28,6 +29,19 @@ def iris_cols(iris: pd.DataFrame, request: pytest.FixtureRequest) -> pd.Series:
 
 @pytest.fixture(
     params=[
+        str,
+        pytest.param(lambda col_name: pd.Index([col_name]), id='pd.Index')
+    ]
+)
+def iris_single_col_subset(iris_cols: pd.Series, request):
+    """Return a col name as a str or pd.Index"""
+    func = request.param
+    col = iris_cols.name
+    return func(col)
+
+
+@pytest.fixture(
+    params=[
         pytest.param(pd.Series([1, 2, 3] * 3, dtype="int32"), id='int32series'),
         pytest.param(pd.Series([None, 2.5, 3.5] * 3, dtype="float32"), id='float32series'),
         pytest.param(pd.Series(["a", "b", "c"] * 3, dtype="category"), id='category_series'),
@@ -46,7 +60,7 @@ def series(request: pytest.FixtureRequest) -> pd.Series:
 
 
 pairs = list(itertools.permutations(iris_df.columns, 2))
-@pytest.fixture(params=pairs, ids=map(str, pairs))
+@pytest.fixture(params=pairs, ids=map(str, pairs))  # noqa
 def multiindex(
         iris: pd.DataFrame,
         request: pytest.FixtureRequest
@@ -64,14 +78,14 @@ def multiindex(
     pytest.param(lambda arr: np.rint(arr).astype(int), id='rint')  # any -> int
 ], name='func')
 def plot_func(request: pytest.FixtureRequest) -> Callable:
-    """A variety of funcs callable on numeric ndarrays"""
+    """A variety of mathematical funcs callable on numeric numpy ndarrays"""
     return request.param
 
 
 @pytest.fixture(params=[
     np.linspace(0, 10 ** -5, dtype=float),
     np.linspace(0, 499, num=500, dtype='int32'),
-    np.linspace(0, 2**33, 2**10 + 1, dtype='int64')
+    np.linspace(0, 2 ** 33, 2 ** 10 + 1, dtype='int64')
 ], ids=lambda arr: str(arr.dtype))
 def x_values(request: pytest.FixtureRequest) -> np.ndarray:
     """func inputs of different dtypes"""
@@ -118,3 +132,64 @@ def mpl_figs_and_axes(
 ) -> Union[plt.Figure, plt.Axes]:
     """Returns either the figure or the axis of various plots"""
     return mpl_plots[_fig_or_ax]
+
+
+today = pd.Timestamp.today(dateutil.tz.tzlocal())
+strftime_codes = [
+    "%B %d, %Y",  # June 12, 2022
+    "%Y-%m-%d",  # 2022-06-12
+    "%B %e, %Y",  # June 12, 2022
+    "%a, %b %e",  # Sun, Jun 12
+    "%e %b %Y",  # 12 Jun 2022
+    "%A, %B %e, %Y",  # Sunday, June 12, 2022
+    "%H:%M:%S",  # 16:51:45
+    "%Y-%m-%dT%H:%M:%S.%f%z",  # 2022-06-12T16:51:45.576846-0500
+    "%I:%M %p"  # 04:51 PM
+]
+@pytest.fixture(params=iter(strftime_codes), ids=[f"{today:{strftime}}" for strftime in strftime_codes])  # noqa
+def strftime(request) -> str:
+    """Various different strftime format codes"""
+    return request.param
+
+
+@pytest.fixture(params=[
+    pd.to_timedelta(0),
+    pd.Timedelta(hours=15),
+    pd.DataFrame(
+        map(
+            lambda row: pd.to_timedelta(row, unit='hours'),
+            np.random.rand(10, 3) * 24
+        ),
+        columns=list('ABC')
+    )
+])
+def datetime_df(request) -> pd.DataFrame:
+    """DataFrame with datetime data, integer index, and str column names.
+               A          B          C
+0 2000-01-03 2000-01-02 2000-12-31
+1 2000-01-04 2000-01-09 2001-12-31
+2 2000-01-05 2000-01-16 2002-12-31
+3 2000-01-06 2000-01-23 2003-12-31
+4 2000-01-07 2000-01-30 2004-12-31
+5 2000-01-10 2000-02-06 2005-12-31
+6 2000-01-11 2000-02-13 2006-12-31
+7 2000-01-12 2000-02-20 2007-12-31
+8 2000-01-13 2000-02-27 2008-12-31
+9 2000-01-14 2000-03-05 2009-12-31"""
+    from pandas._testing import makeDateIndex
+    df = pd.DataFrame(dict(
+        A=makeDateIndex(freq='b'),
+        B=makeDateIndex(freq='w'),
+        C=makeDateIndex(freq='y')
+    ))
+    # func = request.param
+    # return func(df)
+    time_offset = request.param
+    return df + time_offset
+
+
+@pytest.fixture
+def datetime_and_float_df(datetime_df: pd.DataFrame) -> pd.DataFrame:
+    """datetime_df with additional columns of random positive and negative floats"""
+    datetime_df[list('DE')] = np.random.uniform(-1, 1, (10, 2))
+    return datetime_df
