@@ -167,4 +167,21 @@ def display_and_save_df(
         styler = styler.bar(subset=bar_subset, color="#638ec6",
                             vmin=bar_vmin, vmax=bar_vmax, width=90)
 
+    # Accept a list of kwargs to push through various formatter functions
+    kwargs = {'format': format_kwargs,
+              'background_gradient': background_gradient_kwargs,
+              'bar': bar_kwargs}
+    # Sometimes a single dict is passed instead of a list of dicts
+    kwargs = {k: [kwarg] if isinstance(kwarg, dict) else kwarg
+              for k, kwarg in kwargs.items()}
+    for format_kwarg in kwargs.pop('format'):
+        styler = styler.format(**format_kwarg)
+    for background_gradient_kwarg in kwargs.pop('background_gradient'):
+        # By default, text_color_threshold should be 0. Everything in black text.
+        text_color_threshold = background_gradient_kwarg.pop('text_color_threshold', default=0)
+        styler = styler.background_gradient(text_color_threshold=text_color_threshold, **background_gradient_kwarg)
+    for bar_kwarg in kwargs.pop('bar'):
+        color = bar_kwarg.pop('color', default='#638ec6')
+        styler = styler.bar(color=color, **bar_kwarg)
+
     return styler

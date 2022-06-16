@@ -342,3 +342,4 @@ class TestDisplayAndSave:
         vmax_pcnts = self.bar_pcnt_from_html(vmax_styler.to_html())
         assert (vmax_pcnts < regular_pcnts).all()
 
+    # TODO: tests of additional *_kwargs. Should somehow parameterize all the tests above, if possible...
