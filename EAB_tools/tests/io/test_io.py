@@ -1,11 +1,13 @@
-from contextlib import nullcontext as does_not_raise
 import itertools
+import os
+import re
+from contextlib import nullcontext as does_not_raise
+from pathlib import Path
 from typing import (
     Union,
     Any,
     Sequence
 )
-import re
 
 import pandas as pd
 import pytest
@@ -15,17 +17,27 @@ from EAB_tools.io.io import (
 )
 
 
+@pytest.mark.parametrize('save_image',
+                         [
+                             pytest.param(True, marks=pytest.mark.slow),
+                             False
+                         ], ids="save_image={0}".format)
+@pytest.mark.parametrize('save_excel', [True, False], ids="save_excel={0}".format)
 class TestDisplayAndSave:
-    def test_doesnt_fail(self, iris: pd.DataFrame):
-        display_and_save_df(iris)
+    @pytest.fixture(autouse=True)
+    def _init(self, tmp_path: Path):
+        os.chdir(tmp_path)
 
-    def test_series_doesnt_fail(self, series: pd.Series):
-        display_and_save_df(series)
+    def test_doesnt_fail(self, iris: pd.DataFrame, save_image, save_excel):
+        display_and_save_df(iris, save_image=save_image, save_excel=save_excel)
 
-    def test_multiindex_index(self, iris: pd.DataFrame):
+    def test_series_doesnt_fail(self, series: pd.Series, save_image, save_excel):
+        display_and_save_df(series, save_image=save_image, save_excel=save_excel)
+
+    def test_multiindex_index(self, iris: pd.DataFrame, save_image, save_excel):
         iris_mi = iris.set_index('Name', append=True)
-        display_and_save_df(iris_mi)
-        display_and_save_df(iris_mi.T)
+        display_and_save_df(iris_mi, save_image=save_image, save_excel=save_excel)
+        display_and_save_df(iris_mi.T, save_image=save_image, save_excel=save_excel)
 
     @staticmethod
     def col_name_from_iris_single_col_subset(col_name: Union[str, pd.Index]):
@@ -49,7 +61,7 @@ class TestDisplayAndSave:
             self,
             iris: pd.DataFrame,
             iris_single_col_subset: Union[str, pd.Index],
-            kwargs: dict[str, Any]
+            kwargs: dict[str, Any], save_image, save_excel
     ):
         """Test for expected text in Stylers"""
         iris, kwargs = iris.copy(), kwargs.copy()
@@ -71,19 +83,20 @@ class TestDisplayAndSave:
             # Just make sure everything goes ok
             an_expected_value = ''
 
-        d = {kwargs.pop("display_and_save_kw"): iris_single_col_subset}
-        styler = display_and_save_df(iris, **d, **kwargs)
-
         if pd.api.types.is_string_dtype(col):
-            with pytest.raises(ValueError):
-                # str columns with incorrect format code should
-                # throw a value error
-                styler.to_html()
-            return
-        html = styler.to_html()
-        assert an_expected_value in html
+            context = pytest.raises(ValueError)
+        else:
+            context = does_not_raise()
+        with context:
+            # str columns with incorrect format code should
+            # throw a ValueError
+            d = {kwargs.pop("display_and_save_kw"): iris_single_col_subset}
+            styler = display_and_save_df(iris, save_image=save_image, save_excel=save_excel, **d, **kwargs)
+            styler.to_html()
+            html = styler.to_html()
+            assert an_expected_value in html
 
-    def test_auto_percentage_format(self, iris: pd.DataFrame, iris_cols: pd.Series):
+    def test_auto_percentage_format(self, iris: pd.DataFrame, iris_cols: pd.Series, save_image, save_excel):
         col = iris_cols.name
         new_col = f"{col} %"
         df_w_pcnt_sign_col = iris.rename(columns={col: new_col})
@@ -95,12 +108,13 @@ class TestDisplayAndSave:
             an_expected_value = ''
         styler = display_and_save_df(df_w_pcnt_sign_col,
                                      percentage_format_subset='auto',
-                                     percentage_format_precision=0)
+                                     percentage_format_precision=0,
+                                     save_image=save_image, save_excel=save_excel)
 
         html = styler.to_html()
         assert an_expected_value in html
 
-    def test_auto_thousands_format(self, iris: pd.DataFrame, iris_cols: pd.Series):
+    def test_auto_thousands_format(self, iris: pd.DataFrame, iris_cols: pd.Series, save_image, save_excel):
         iris, iris_cols = iris.copy(), iris_cols.copy()
         col = iris_cols.name
 
@@ -114,7 +128,8 @@ class TestDisplayAndSave:
             an_expected_value = ''
 
         styler = display_and_save_df(iris,
-                                     thousands_format_subset='auto')
+                                     thousands_format_subset='auto',
+                                     save_image=save_image, save_excel=save_excel)
 
         assert an_expected_value in styler.to_html()
 
@@ -122,7 +137,7 @@ class TestDisplayAndSave:
         "precision", range(3)
     )
     def test_auto_float_format(self, iris: pd.DataFrame, iris_cols: pd.Series,
-                               precision: int):
+                               precision: int, save_image, save_excel):
         iris, iris_cols = iris.copy(), iris_cols.copy()
 
         if pd.api.types.is_numeric_dtype(iris_cols):
@@ -134,7 +149,8 @@ class TestDisplayAndSave:
 
         styler = display_and_save_df(iris,
                                      float_format_subset='auto',
-                                     float_format_precision=precision)
+                                     float_format_precision=precision,
+                                     save_image=save_image, save_excel=save_excel)
 
         assert an_expected_value in styler.to_html()
 
@@ -145,45 +161,47 @@ class TestDisplayAndSave:
     def test_datetime_format(self,
                              datetime_df: pd.DataFrame,
                              subset: Sequence[str],
-                             strftime: str):
+                             strftime: str, save_image, save_excel):
         if len(subset) > 0:
             an_expected_value = datetime_df[subset[0]].iloc[0]
             an_expected_value = f"{an_expected_value:{strftime}}"
         else:
-            an_expected_value = str(datetime_df.iat[0, 0])
+            # If no subset is given, it's hard to say how exactly
+            # the dates will be formatted. For now, just make sure
+            # that nothing fails.
+            an_expected_value = ''
 
         styler = display_and_save_df(datetime_df,
                                      date_format_subset=subset,
-                                     date_format=strftime)
-
+                                     date_format=strftime,
+                                     save_image=save_image, save_excel=save_excel)
         html = styler.to_html()
-
         assert an_expected_value in html
 
     def test_auto_datetime_format(self,
                                   datetime_and_float_df: pd.DataFrame,
-                                  strftime: str):
-
+                                  strftime: str, save_image, save_excel):
         expected_values = [f"{datetime_and_float_df[col].iloc[-1]:{strftime}}"
                            for col in 'ABC']
 
         styler = display_and_save_df(datetime_and_float_df,
                                      date_format_subset='auto',
-                                     date_format=strftime)
+                                     date_format=strftime,
+                                     save_image=save_image, save_excel=save_excel)
 
         html = styler.to_html()
         assert all(expected_value in html
                    for expected_value in expected_values)
 
-    def test_hide_index(self, iris: pd.DataFrame):
+    def test_hide_index(self, iris: pd.DataFrame, save_image, save_excel):
         iris = iris.copy().set_index('Name')
-        styler = display_and_save_df(iris, hide_index=True)
+        styler = display_and_save_df(iris, hide_index=True, save_image=save_image, save_excel=save_excel)
         html = styler.to_html()
 
         assert all(name not in html
                    for name in iris.index.unique())
 
-        styler_with_index = display_and_save_df(iris, hide_index=False)
+        styler_with_index = display_and_save_df(iris, hide_index=False, save_image=save_image, save_excel=save_excel)
         html_with_index = styler_with_index.to_html()
 
         assert all(name in html_with_index
@@ -191,17 +209,19 @@ class TestDisplayAndSave:
 
     def test_ryg_background_gradient(self,
                                      iris: pd.DataFrame,
-                                     iris_single_col_subset: Union[str, pd.Index]):
+                                     iris_single_col_subset: Union[str, pd.Index],
+                                     save_image, save_excel):
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
-        styler = display_and_save_df(iris,
-                                     ryg_bg_subset=iris_single_col_subset)
         # Should get ValueError on string dtypes
-        cm = pytest.raises(ValueError, match="could not convert string to float") \
+        context = pytest.raises(ValueError, match="could not convert string to float") \
             if pd.api.types.is_string_dtype(iris[col_name]) \
             else does_not_raise()
 
-        with cm:
+        with context:
+            styler = display_and_save_df(iris,
+                                         ryg_bg_subset=iris_single_col_subset,
+                                         save_image=save_image, save_excel=save_excel)
             html = styler.to_html()
             expected_min_color = "background-color: #f8696b"
             expected_max_color = "background-color: #63be7b"
@@ -210,7 +230,8 @@ class TestDisplayAndSave:
 
     def test_ryg_background_vmin(self,
                                  iris: pd.DataFrame,
-                                 iris_single_col_subset: Union[str, pd.Index]):
+                                 iris_single_col_subset: Union[str, pd.Index],
+                                 save_image, save_excel):
 
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
@@ -222,7 +243,7 @@ class TestDisplayAndSave:
 
         # By setting vmin=0, the bottom red color should not appear.
         styler = display_and_save_df(iris, ryg_bg_subset=iris_single_col_subset,
-                                     ryg_bg_vmin=0)
+                                     ryg_bg_vmin=0, save_image=save_image, save_excel=save_excel)
 
         expected_min_color = "background-color: #f8696b"
         expected_max_color = "background-color: #63be7b"
@@ -233,7 +254,8 @@ class TestDisplayAndSave:
 
     def test_ryg_background_vmax(self,
                                  iris: pd.DataFrame,
-                                 iris_single_col_subset: Union[str, pd.Index]):
+                                 iris_single_col_subset: Union[str, pd.Index],
+                                 save_image, save_excel):
 
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
@@ -243,7 +265,7 @@ class TestDisplayAndSave:
         vmax = iris.max(numeric_only=True).max() + 1
         # By settings a large vmax, the top red color should not appear
         styler = display_and_save_df(iris, ryg_bg_subset=iris_single_col_subset,
-                                     ryg_bg_vmax=vmax)
+                                     ryg_bg_vmax=vmax, save_image=save_image, save_excel=save_excel)
 
         expected_min_color = "background-color: #f8696b"
         expected_max_color = "background-color: #63be7b"
@@ -254,7 +276,8 @@ class TestDisplayAndSave:
 
     def test_gyr_background_vmin(self,
                                  iris: pd.DataFrame,
-                                 iris_single_col_subset: Union[str, pd.Index]):
+                                 iris_single_col_subset: Union[str, pd.Index],
+                                 save_image, save_excel):
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
@@ -265,7 +288,7 @@ class TestDisplayAndSave:
 
         # By setting vmin=0, the bottom green color should not appear.
         styler = display_and_save_df(iris, gyr_bg_subset=iris_single_col_subset,
-                                     gyr_bg_vmin=0)
+                                     gyr_bg_vmin=0, save_image=save_image, save_excel=save_excel)
 
         expected_max_color = "background-color: #f8696b"
         expected_min_color = "background-color: #63be7b"
@@ -276,7 +299,8 @@ class TestDisplayAndSave:
 
     def test_gyr_background_vmax(self,
                                  iris: pd.DataFrame,
-                                 iris_single_col_subset: Union[str, pd.Index]):
+                                 iris_single_col_subset: Union[str, pd.Index],
+                                 save_image, save_excel):
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
@@ -285,7 +309,7 @@ class TestDisplayAndSave:
         vmax = iris.max(numeric_only=True).max() + 1
         # By settings a large vmax, the top red color should not appear
         styler = display_and_save_df(iris, gyr_bg_subset=iris_single_col_subset,
-                                     gyr_bg_vmax=vmax)
+                                     gyr_bg_vmax=vmax, save_image=save_image, save_excel=save_excel)
 
         expected_max_color = "background-color: #f8696b"
         expected_min_color = "background-color: #63be7b"
@@ -294,13 +318,14 @@ class TestDisplayAndSave:
         assert expected_min_color.casefold() in html
         assert expected_max_color.casefold() not in html
 
-    def test_bar_style(self, iris: pd.DataFrame, iris_single_col_subset: Union[str, pd.Index]):
+    def test_bar_style(self, iris: pd.DataFrame, iris_single_col_subset: Union[str, pd.Index], save_image, save_excel):
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
             # Can't apply bar format to string dtype columns
             return
-        styler = display_and_save_df(iris, bar_subset=iris_single_col_subset,)
+        styler = display_and_save_df(iris, bar_subset=iris_single_col_subset,
+                                     save_image=save_image, save_excel=save_excel)
         html = styler.to_html()
         expected_max_bar = "background: linear-gradient(90deg, #638ec6 90.0%, transparent 90.0%);".casefold()
 
@@ -313,14 +338,16 @@ class TestDisplayAndSave:
         series = pd.Series(pcnts, dtype=float)
         return series
 
-    def test_bar_vmin(self, iris: pd.DataFrame, iris_single_col_subset: Union[str, pd.Index]):
+    def test_bar_vmin(self, iris: pd.DataFrame, iris_single_col_subset: Union[str, pd.Index], save_image, save_excel):
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
             return
 
-        regular_styler = display_and_save_df(iris, bar_subset=iris_single_col_subset)
-        vmin_styler = display_and_save_df(iris, bar_subset=iris_single_col_subset, bar_vmin=-1)
+        regular_styler = display_and_save_df(iris, bar_subset=iris_single_col_subset,
+                                             save_image=save_image, save_excel=save_excel)
+        vmin_styler = display_and_save_df(iris, bar_subset=iris_single_col_subset, bar_vmin=-1,
+                                          save_image=save_image, save_excel=save_excel)
 
         # By setting a vmin smaller than the column min, the bars should get larger
         # Except for the maximum
@@ -328,14 +355,16 @@ class TestDisplayAndSave:
         vmin_pcnts = self.bar_pcnt_from_html(vmin_styler.to_html())
         assert (vmin_pcnts >= regular_pcnts).all()
 
-    def test_bar_vmax(self, iris: pd.DataFrame, iris_single_col_subset: Union[str, pd.Index]):
+    def test_bar_vmax(self, iris: pd.DataFrame, iris_single_col_subset: Union[str, pd.Index], save_image, save_excel):
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
             return
 
-        regular_styler = display_and_save_df(iris, bar_subset=iris_single_col_subset)
-        vmax_styler = display_and_save_df(iris, bar_subset=iris_single_col_subset, bar_vmax=10)
+        regular_styler = display_and_save_df(iris, bar_subset=iris_single_col_subset,
+                                             save_image=save_image, save_excel=save_excel)
+        vmax_styler = display_and_save_df(iris, bar_subset=iris_single_col_subset, bar_vmax=10,
+                                          save_image=save_image, save_excel=save_excel)
 
         # By setting a vmax larger than the global max, the bars should get shorter
         regular_pcnts = self.bar_pcnt_from_html(regular_styler.to_html())
