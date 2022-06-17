@@ -26,9 +26,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools
-        if ( Test-Path -Path ./requirements.txt -PathType leaf )
+        foreach ($f in Get-ChildItem "*requirements*.txt")
         {
-          python -m pip install -r requirements.txt
+          python -m pip install -r $f
         }
         python -m pip install -e .
     - name: Install py.test and flake8
