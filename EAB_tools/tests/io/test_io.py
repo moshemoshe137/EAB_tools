@@ -16,13 +16,20 @@ from EAB_tools.io.io import (
     display_and_save_df
 )
 
+try:
+    import openpyxl
+    has_openpyxl = True
+except ImportError as e:
+    has_openpyxl = False
 
 @pytest.mark.parametrize('save_image',
                          [
                              pytest.param(True, marks=pytest.mark.slow),
                              False
                          ], ids="save_image={0}".format)
-@pytest.mark.parametrize('save_excel', [True, False], ids="save_excel={0}".format)
+@pytest.mark.parametrize('save_excel',
+                         [True, False] if has_openpyxl else [False],
+                         ids="save_excel={0}".format)
 class TestDisplayAndSave:
     @pytest.fixture(autouse=True)
     def _init(self, tmp_path: Path):

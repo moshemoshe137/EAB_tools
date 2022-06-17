@@ -11,7 +11,6 @@ from typing import (
 import dataframe_image as dfi  # noqa
 import matplotlib.pyplot as plt
 import numpy as np
-import openpyxl
 import pandas as pd
 from IPython.display import display
 from pandas.io.formats.style import Styler, Subset
@@ -71,6 +70,11 @@ def display_and_save_df(
             thousands_format_subset: Optional[Union[Subset, str]],
             bar_subset: Optional[Union[Subset, str]]
     ):
+        try:
+            import openpyxl
+        except ImportError as e:
+            raise ImportError("openpyxl is required for Excel functionality")
+
         excel_output = filepath.parent / 'output.xlsx'
         # Determine ExcelWriter params based on if the file exists or not
         mode, if_sheet_exists = ('a', 'replace') if excel_output.exists() else ('w', None)

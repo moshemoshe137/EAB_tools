@@ -1,0 +1,7 @@
+# Testing
+pytest
+flaky
+pytest-random-order
+
+# Additional functionality
+openpyxl
