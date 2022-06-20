@@ -31,8 +31,8 @@ except ImportError as e:
                              False
                          ], ids="save_image={0}".format)
 @pytest.mark.parametrize('save_excel',
-                         [True, False] if _HAS_OPENPYXL else [False],
-                         ids="save_excel={0}".format)
+                          [pytest.param(True, marks=pytest.mark.skipif(not _HAS_OPENPYXL, reason='openpyxl required')),
+                           False], ids="save_excel={0}".format)
 class TestDisplayAndSave:
     @pytest.fixture(autouse=True)
     def _init(self, tmp_path: Path):
