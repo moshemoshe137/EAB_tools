@@ -80,6 +80,6 @@ class TestSanitizeXlSheetname:
         r"""The following chars are forbidden: \/?*[]:"""
         illegal = list(r"/\?*[]:")
         assert all(
-            [bad_char not in sanitize_xl_sheetname(sn)
-             for bad_char in illegal]
+            bad_char not in sanitize_xl_sheetname(sn)
+             for bad_char in illegal
         )

@@ -51,9 +51,9 @@ def display_and_save_df(
         bar_subset: Optional[Union[Subset, str]] = None,
         bar_vmin: Optional[int] = None,
         bar_vmax: Optional[int] = None,
-        format_kwargs: Sequence[dict[str, Any]] = [],
-        background_gradient_kwargs: Sequence[dict[str, Any]] = [],
-        bar_kwargs: Sequence[dict[str, Any]] = [],
+        format_kwargs: Sequence[dict[str, Any]] = None,
+        background_gradient_kwargs: Sequence[dict[str, Any]] = None,
+        bar_kwargs: Sequence[dict[str, Any]] = None,
         save_excel: bool = False,
         save_image: bool = False,
         min_width: str = "10em",
@@ -62,6 +62,12 @@ def display_and_save_df(
     """Does lots o stuff, very nicely"""
     if hasattr(df, 'copy'):
         df = df.copy(deep=True)
+    if format_kwargs is None:
+        format_kwargs = []
+    if background_gradient_kwargs is None:
+        background_gradient_kwargs = []
+    if bar_kwargs is None:
+        bar_kwargs = []
 
     def to_excel(
             df: pd.DataFrame, styler: Styler,
@@ -73,7 +79,7 @@ def display_and_save_df(
         try:
             import openpyxl
         except ImportError as e:
-            raise ImportError("openpyxl is required for Excel functionality")
+            raise ImportError("openpyxl is required for Excel functionality") from e
 
         excel_output = filepath.parent / 'output.xlsx'
         # Determine ExcelWriter params based on if the file exists or not
@@ -93,7 +99,7 @@ def display_and_save_df(
         with pd.ExcelWriter(excel_output, engine='openpyxl',
                             mode=mode, if_sheet_exists=if_sheet_exists) as wb:
             print(f"Exporting to Excel as '{excel_output.resolve().parent}\\"
-                  f"[{excel_output.name}]{sn}'", end=f" ... ")
+                  f"[{excel_output.name}]{sn}'", end=" ... ")
             styler.to_excel(wb, sheet_name=sn, engine='openpyxl')
 
             if percentage_format_subset is not None \
@@ -140,7 +146,7 @@ def display_and_save_df(
                             cell.number_format = code
                     if col_num - len_index in tsnd_cols:
                         for cell in col:
-                            cell.number_format = f"#,##0"
+                            cell.number_format = "#,##0"
 
                     # Add bar conditional formatting, using the style's vmin and vmax, if given
                     rule = openpyxl.formatting.rule.DataBarRule(
@@ -157,7 +163,7 @@ def display_and_save_df(
 
                         # I could not even find the function ws.conditional_formatting.add()
                         # in the openpyxl docs. Thank god for https://stackoverflow.com/a/32454012.
-                        ws.conditional_formatting.add(f"{letter}1:{letter}{end_num}", rule)
+                        ws.conditional_formatting.add(xl_range, rule)
 
     # Convert pd.Series to Frame if needed
     if isinstance(df, pd.Series):
@@ -299,7 +305,7 @@ def display_and_save_df(
     if save_image:
         filename.parent.mkdir(exist_ok=True, parents=True)
 
-        print(f"Saving as '{filename.resolve()}'", end=f" ... ")
+        print(f"Saving as '{filename.resolve()}'", end=" ... ")
         styler.export_png(str(filename), fontsize=16, max_rows=200, max_cols=200)
 
     # Save the Styler to Excel sheet

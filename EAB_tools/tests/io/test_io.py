@@ -1,3 +1,4 @@
+# pylint: disable=C0114, C0116
 import itertools
 import os
 import re
@@ -17,10 +18,12 @@ from EAB_tools.io.io import (
 )
 
 try:
-    import openpyxl
-    has_openpyxl = True
+    import openpyxl as _openpyxl  # pylint: disable=W0611
+
+    _HAS_OPENPYXL = True
 except ImportError as e:
-    has_openpyxl = False
+    _HAS_OPENPYXL = False
+
 
 @pytest.mark.parametrize('save_image',
                          [
@@ -28,7 +31,7 @@ except ImportError as e:
                              False
                          ], ids="save_image={0}".format)
 @pytest.mark.parametrize('save_excel',
-                         [True, False] if has_openpyxl else [False],
+                         [True, False] if _HAS_OPENPYXL else [False],
                          ids="save_excel={0}".format)
 class TestDisplayAndSave:
     @pytest.fixture(autouse=True)
@@ -98,12 +101,14 @@ class TestDisplayAndSave:
             # str columns with incorrect format code should
             # throw a ValueError
             d = {kwargs.pop("display_and_save_kw"): iris_single_col_subset}
-            styler = display_and_save_df(iris, save_image=save_image, save_excel=save_excel, **d, **kwargs)
+            styler = display_and_save_df(iris, save_image=save_image, save_excel=save_excel,
+                                         **d, **kwargs)
             styler.to_html()
             html = styler.to_html()
             assert an_expected_value in html
 
-    def test_auto_percentage_format(self, iris: pd.DataFrame, iris_cols: pd.Series, save_image, save_excel):
+    def test_auto_percentage_format(self, iris: pd.DataFrame, iris_cols: pd.Series,
+                                    save_image, save_excel):
         col = iris_cols.name
         new_col = f"{col} %"
         df_w_pcnt_sign_col = iris.rename(columns={col: new_col})
@@ -121,7 +126,8 @@ class TestDisplayAndSave:
         html = styler.to_html()
         assert an_expected_value in html
 
-    def test_auto_thousands_format(self, iris: pd.DataFrame, iris_cols: pd.Series, save_image, save_excel):
+    def test_auto_thousands_format(self, iris: pd.DataFrame, iris_cols: pd.Series,
+                                   save_image, save_excel):
         iris, iris_cols = iris.copy(), iris_cols.copy()
         col = iris_cols.name
 
@@ -164,7 +170,8 @@ class TestDisplayAndSave:
     combos = [list(combo)
               for r in range(4)
               for combo in itertools.combinations('ABC', r)]
-    @pytest.mark.parametrize("subset", combos, ids=map(repr, combos))
+
+    @pytest.mark.parametrize("subset", combos, ids=map(repr, combos))  # noqa
     def test_datetime_format(self,
                              datetime_df: pd.DataFrame,
                              subset: Sequence[str],

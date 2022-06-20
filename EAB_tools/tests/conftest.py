@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+from pandas._testing import makeDateIndex
 
 iris_df: pd.DataFrame = pd.read_csv(Path(__file__).parent / "io/data/iris.csv")
 
@@ -22,7 +23,7 @@ def iris() -> pd.DataFrame:
 
 
 @pytest.fixture(params=iris_df.columns)
-def iris_cols(iris: pd.DataFrame, request: pytest.FixtureRequest) -> pd.Series:
+def iris_cols(request: pytest.FixtureRequest) -> pd.Series:
     """Return iris dataframe columns, one after the next"""
     return iris_df[request.param]
 
@@ -176,14 +177,11 @@ def datetime_df(request) -> pd.DataFrame:
 7 2000-01-12 2000-02-20 2007-12-31
 8 2000-01-13 2000-02-27 2008-12-31
 9 2000-01-14 2000-03-05 2009-12-31"""
-    from pandas._testing import makeDateIndex
     df = pd.DataFrame(dict(
         A=makeDateIndex(freq='b'),
         B=makeDateIndex(freq='w'),
         C=makeDateIndex(freq='y')
     ))
-    # func = request.param
-    # return func(df)
     time_offset = request.param
     return df + time_offset
 
