@@ -3,6 +3,13 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--doctest-modules --no-flaky-report --random-order-seed=0 -m 'not slow'"
+doctest_optionflags = [
+    "NORMALIZE_WHITESPACE"
+]
 markers = [
     "slow: mark a test as slow",
 ]
+xfail_strict = true
+required_plugins = "flaky pytest-random-order"
