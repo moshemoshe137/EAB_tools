@@ -5,3 +5,6 @@ pytest-random-order
 
 # Additional functionality
 openpyxl
+
+# Code checks
+black

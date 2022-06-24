@@ -2,10 +2,7 @@
 
 import pytest
 
-from EAB_tools.io.filenames import (
-    sanitize_filename,
-    sanitize_xl_sheetname
-)
+from EAB_tools.io.filenames import sanitize_filename, sanitize_xl_sheetname
 
 
 class TestSanitizeFilename:
@@ -25,7 +22,7 @@ class TestSanitizeFilename:
 
     def test_sanitize_filename_blank(self):
         """A blank str should be untouched"""
-        assert sanitize_filename('') == ''
+        assert sanitize_filename("") == ""
 
     def test_sanitize_filename_dirty_unicode(self):
         """Special unicode characters should be removed"""
@@ -52,34 +49,43 @@ class TestSanitizeXlSheetname:
     def test_blank(self):
         """A worksheet name cannot be left blank"""
         with pytest.raises(ValueError) as e_info:
-            sanitize_xl_sheetname('')
+            sanitize_xl_sheetname("")
 
-    @pytest.mark.parametrize("sn", ["History", 'History', 'HiStOrY'])
+    @pytest.mark.parametrize("sn", ["History", "History", "HiStOrY"])
     def test_history(self, sn):
         """A worksheet cannot have the name 'history', regardless of case"""
         with pytest.raises(ValueError) as e_info:
             sanitize_xl_sheetname(sn)
 
-    strs = ["'This is bad'", "this's ok", "can't end'",
-            "'can't start", "this is all good", "abba"]
+    strs = [
+        "'This is bad'",
+        "this's ok",
+        "can't end'",
+        "'can't start",
+        "this is all good",
+        "abba",
+    ]
 
     @pytest.mark.parametrize("sn", strs)
     def test_apostrophe_on_ends(self, sn):
         """The apostrophe cannot be used at the beginning or end of a
-         worksheet name, but can be used in the middle of a name"""
+        worksheet name, but can be used in the middle of a name"""
         clean = sanitize_xl_sheetname(sn)
         assert clean[0] != "'" and clean[-1] != "'"
 
-    strs = [r"No /slashes!", r"Of\any kind",
-            r"C:\Windows\sys32", r"/bin/python3",
-            r"No q marks?", r"No *****'n stars!",
-            r"square =] brackets =[", "9:00 AM"]
+    strs = [
+        r"No /slashes!",
+        r"Of\any kind",
+        r"C:\Windows\sys32",
+        r"/bin/python3",
+        r"No q marks?",
+        r"No *****'n stars!",
+        r"square =] brackets =[",
+        "9:00 AM",
+    ]
 
     @pytest.mark.parametrize("sn", strs)
     def test_illegal_chars(self, sn):
         r"""The following chars are forbidden: \/?*[]:"""
         illegal = list(r"/\?*[]:")
-        assert all(
-            bad_char not in sanitize_xl_sheetname(sn)
-             for bad_char in illegal
-        )
+        assert all(bad_char not in sanitize_xl_sheetname(sn) for bad_char in illegal)

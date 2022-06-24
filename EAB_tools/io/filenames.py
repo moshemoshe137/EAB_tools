@@ -32,7 +32,7 @@ def sanitize_filename(filename: str) -> str:
     >>> sanitize_filename('python is fun 🐍.py')
     'python is fun _.py'
     """
-    return re.sub(r'[^\w\-_. ()]', '_', filename)
+    return re.sub(r"[^\w\-_. ()]", "_", filename)
 
 
 def sanitize_xl_sheetname(sheetname: str) -> str:
@@ -65,13 +65,13 @@ def sanitize_xl_sheetname(sheetname: str) -> str:
     """
     # A worksheet cannot be named history, regardless of case
     # A worksheet name cannot be left blank
-    if sheetname == '' or sheetname.lower() == 'history':
-        raise ValueError(f"Invalid sheet name \"{sheetname}\"")
+    if sheetname == "" or sheetname.lower() == "history":
+        raise ValueError(f'Invalid sheet name "{sheetname}"')
 
     # A sheetname cannot start or end with an apostrophe
     sheetname = re.sub(r"^'|'$", "_", sheetname)
 
     # Only certain chars are allowed
     allowed = r"`~!@#$%^&()\-_=+{}|;,<.> '"
-    sheetname = re.sub(fr"[^{allowed}\w]", "_", sheetname)
+    sheetname = re.sub(rf"[^{allowed}\w]", "_", sheetname)
     return sheetname[-31:]

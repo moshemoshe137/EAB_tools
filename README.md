@@ -1,4 +1,5 @@
 # EAB Tools
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Tools for analyzing data exported from the EAB Navigate Student Success Management Software.
 
