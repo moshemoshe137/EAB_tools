@@ -17,7 +17,7 @@
     - mypy
     - pre-commit
     - pycodestyle  `# used by flake 8`
-    - pyupgrade 
+    - pyupgrade
 
 
-Notably, pylint seems a little controversial and difficult to maintain. Still, doesn't necessarily hurt to have. When in doubt, I think I plan to follow [pandas](https://github.com/pandas-dev/pandas)'s conventions. 
+Notably, pylint seems a little controversial and difficult to maintain. Still, doesn't necessarily hurt to have. When in doubt, I think I plan to follow [pandas](https://github.com/pandas-dev/pandas)'s conventions.
