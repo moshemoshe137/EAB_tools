@@ -8,3 +8,4 @@ openpyxl
 
 # Code checks
 black
+pre-commit

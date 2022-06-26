@@ -15,7 +15,7 @@
     - flake8-comprehensions  `# used by flake8, linting of unnecessary comprehensions`
     - isort  `# check that imports are in the right order`
     - mypy
-    - pre-commit
+    - ~~pre-commit~~
     - pycodestyle  `# used by flake 8`
     - pyupgrade
 
