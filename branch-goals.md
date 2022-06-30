@@ -3,7 +3,7 @@
 
 - [Reddit thread](https://www.reddit.com/r/Python/comments/vb3tw6/comment/ic6ql46/?utm_source=share&utm_medium=web2x&context=3) mentioned some great linters:
     - ~~black~~
-    - isort
+    - ~~isort~~
     - ~~flake8~~
     - pylint
     - mypy
@@ -13,7 +13,7 @@
     - ~~flake8~~
     - ~~flake8-bugbear~~  `# used by flake8, find likely bugs`
     - ~~flake8-comprehensions~~  `# used by flake8, linting of unnecessary comprehensions`
-    - isort  `# check that imports are in the right order`
+    - ~~isort~~  `# check that imports are in the right order`
     - mypy
     - ~~pre-commit~~
     - ~~pycodestyle~~  `# used by flake 8`
