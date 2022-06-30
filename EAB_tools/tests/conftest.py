@@ -120,7 +120,7 @@ def mpl_plots(
     fig, ax = plt.subplots()
     ax.plot(x, y)
 
-    yield dict(fig=fig, ax=ax)
+    yield {"fig": fig, "ax": ax}
     plt.close(fig)
 
 
@@ -172,10 +172,7 @@ def strftime(request) -> str:
         pd.to_timedelta(0),
         pd.Timedelta(hours=15),
         pd.DataFrame(
-            map(
-                lambda row: pd.to_timedelta(row, unit="hours"),
-                np.random.rand(10, 3) * 24,
-            ),
+            (pd.to_timedelta(row, unit="hours") for row in np.random.rand(10, 3) * 24),
             columns=list("ABC"),
         ),
     ]
@@ -194,11 +191,11 @@ def datetime_df(request) -> pd.DataFrame:
     8 2000-01-13 2000-02-27 2008-12-31
     9 2000-01-14 2000-03-05 2009-12-31"""
     df = pd.DataFrame(
-        dict(
-            A=makeDateIndex(freq="b"),
-            B=makeDateIndex(freq="w"),
-            C=makeDateIndex(freq="y"),
-        )
+        {
+            "A": makeDateIndex(freq="b"),
+            "B": makeDateIndex(freq="w"),
+            "C": makeDateIndex(freq="y"),
+        }
     )
     time_offset = request.param
     return df + time_offset

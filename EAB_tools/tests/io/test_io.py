@@ -12,10 +12,10 @@ import pytest
 from EAB_tools.io.io import display_and_save_df
 
 try:
-    import openpyxl as _openpyxl  # pylint: disable=W0611
+    import openpyxl as _openpyxl  # noqa: F401 # 'openpyxl ... imported but unused
 
     _HAS_OPENPYXL = True
-except ImportError as e:
+except ImportError:
     _HAS_OPENPYXL = False
 
 
@@ -59,43 +59,43 @@ class TestDisplayAndSave:
         "kwargs",
         [
             pytest.param(
-                dict(
-                    format="{:,}",
-                    display_and_save_kw="thousands_format_subset",
-                    need_large_numbers=True,
-                ),
+                {
+                    "format": "{:,}",
+                    "display_and_save_kw": "thousands_format_subset",
+                    "need_large_numbers": True,
+                },
                 id="thousands subset",
             ),
             pytest.param(
-                dict(
-                    format="{:.1%}",
-                    display_and_save_kw="percentage_format_subset",
-                    percentage_format_precision=1,
-                ),
+                {
+                    "format": "{:.1%}",
+                    "display_and_save_kw": "percentage_format_subset",
+                    "percentage_format_precision": 1,
+                },
                 id="percentage subset",
             ),
             pytest.param(
-                dict(
-                    format="{:.0f}",
-                    display_and_save_kw="float_format_subset",
-                    float_format_precision=0,
-                ),
+                {
+                    "format": "{:.0f}",
+                    "display_and_save_kw": "float_format_subset",
+                    "float_format_precision": 0,
+                },
                 id="float.0f",
             ),
             pytest.param(
-                dict(
-                    format="{:.1f}",
-                    display_and_save_kw="float_format_subset",
-                    float_format_precision=1,
-                ),
+                {
+                    "format": "{:.1f}",
+                    "display_and_save_kw": "float_format_subset",
+                    "float_format_precision": 1,
+                },
                 id="float.1f",
             ),
             pytest.param(
-                dict(
-                    format="{:.2f}",
-                    display_and_save_kw="float_format_subset",
-                    float_format_precision=2,
-                ),
+                {
+                    "format": "{:.2f}",
+                    "display_and_save_kw": "float_format_subset",
+                    "float_format_precision": 2,
+                },
                 id="float.2f",
             ),
         ],
@@ -454,13 +454,18 @@ class TestDisplayAndSave:
             save_excel=save_excel,
         )
         html = styler.to_html()
-        expected_max_bar = "background: linear-gradient(90deg, #638ec6 90.0%, transparent 90.0%);".casefold()
+        expected_max_bar = (
+            "background: linear-gradient" "(90deg, #638ec6 90.0%, transparent 90.0%);"
+        ).casefold()
 
         assert expected_max_bar in html.casefold()
 
     @staticmethod
     def bar_pcnt_from_html(html: str):
-        regexp = r"background: linear\-gradient\(90deg,.* #638ec6 (?P<percentage>\d{1,2}\.\d)\%"
+        regexp = (
+            r"background: linear\-gradient\(90deg,.* #638ec6 "
+            r"(?P<percentage>\d{1,2}\.\d)\%"
+        )
         pcnts = re.findall(regexp, html)
         series = pd.Series(pcnts, dtype=float)
         return series
@@ -528,4 +533,5 @@ class TestDisplayAndSave:
         vmax_pcnts = self.bar_pcnt_from_html(vmax_styler.to_html())
         assert (vmax_pcnts < regular_pcnts).all()
 
-    # TODO: tests of additional *_kwargs. Should somehow parameterize all the tests above, if possible...
+    # TODO: tests of additional *_kwargs. Should somehow parameterize all the tests
+    #  above, if possible...

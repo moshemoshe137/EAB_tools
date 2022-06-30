@@ -41,20 +41,23 @@ class TestSanitizeXlSheetname:
 
     def test_too_long(self):
         """Long sheetnames must be truncated to 31 chars or fewer"""
-        dirty_str = "This is my sheet name it's a very long sheet name I wish it could be shorter"
+        dirty_str = (
+            "This is my sheet name it's a very long sheet name "
+            "I wish it could be shorter"
+        )
         expected = "name I wish it could be shorter"
         sanitized = sanitize_xl_sheetname(dirty_str)
         assert expected == sanitized and len(sanitized) <= 31
 
     def test_blank(self):
         """A worksheet name cannot be left blank"""
-        with pytest.raises(ValueError) as e_info:
+        with pytest.raises(ValueError):
             sanitize_xl_sheetname("")
 
     @pytest.mark.parametrize("sn", ["History", "History", "HiStOrY"])
     def test_history(self, sn):
         """A worksheet cannot have the name 'history', regardless of case"""
-        with pytest.raises(ValueError) as e_info:
+        with pytest.raises(ValueError):
             sanitize_xl_sheetname(sn)
 
     strs = [

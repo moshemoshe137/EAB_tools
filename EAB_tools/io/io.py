@@ -117,11 +117,12 @@ def display_and_save_df(
                 or bar_subset is not None
             ):
                 # Number formatting doesn't seem to carry over to
-                # Excel automatically with pandas. Since percentages, thousands, etc. are
-                # so widespread, we are using openpyxl to convert the number formats.
-                #
-                # Additionally, we are using openpyxl to add data bar conditional formatting
-                # for bar_subset.
+                # Excel automatically with pandas. Since percentages, thousands, etc.
+                # are so widespread, we are using openpyxl to convert the number
+                # formats.
+
+                # Additionally, we are using openpyxl to add data bar conditional
+                # formatting for bar_subset.
                 if isinstance(percentage_format_subset, str):
                     percentage_format_subset = [percentage_format_subset]
                 if isinstance(thousands_format_subset, str):
@@ -156,13 +157,17 @@ def display_and_save_df(
                     # Apply percentage, thousands number formats
                     if np.any(col_num - len_index in pcnt_cols):
                         for cell in col:
-                            code = f"0{'.' * (percentage_format_precision > 0)}{'0' * percentage_format_precision}%"
+                            code = (
+                                f"0{'.' * (percentage_format_precision > 0)}"
+                                f"{'0' * percentage_format_precision}%"
+                            )
                             cell.number_format = code
                     if col_num - len_index in tsnd_cols:
                         for cell in col:
                             cell.number_format = "#,##0"
 
-                    # Add bar conditional formatting, using the style's vmin and vmax, if given
+                    # Add bar conditional formatting, using the style's vmin and vmax,
+                    # if given
                     rule = openpyxl.formatting.rule.DataBarRule(
                         start_type="num" if bar_vmin else "min",
                         start_value=bar_vmin,
@@ -180,8 +185,9 @@ def display_and_save_df(
                         end_num = len(df) + df.columns.nlevels
                         xl_range = f"{letter}1:{letter}{end_num}"
 
-                        # I could not even find the function ws.conditional_formatting.add()
-                        # in the openpyxl docs. Thank god for https://stackoverflow.com/a/32454012.
+                        # I could not even find the function
+                        # ws.conditional_formatting.add() in the openpyxl docs. Thank
+                        # god for https://stackoverflow.com/a/32454012.
                         ws.conditional_formatting.add(xl_range, rule)
 
     # Convert pd.Series to Frame if needed
@@ -200,33 +206,37 @@ def display_and_save_df(
 
     # Define some styles.
     # These do NOT export to Excel!
-    LARGE_TITLE = dict(
-        selector="caption", props=[("font-size", "225%"), ("text-align", "center")]
-    )
+    LARGE_TITLE = {
+        "selector": "caption",
+        "props": [("font-size", "225%"), ("text-align", "center")],
+    }
 
-    LARGE_COL_NAMES = dict(
-        selector="th",
-        props=[
+    LARGE_COL_NAMES = {
+        "selector": "th",
+        "props": [
             ("font-size", "110%"),
             ("border-style", "solid"),
             ("text-align", "center"),
         ],
-    )
+    }
 
-    CELL_BORDERS = dict(
-        selector="th,td",
-        props=[("border-style", "solid"), ("border-width", border_width)],
-    )
+    CELL_BORDERS = {
+        "selector": "th,td",
+        "props": [("border-style", "solid"), ("border-width", border_width)],
+    }
 
-    HIGHLIGHT_TOTAL = dict(
-        selector="tr:last-child", props=[("font-weight", "bold"), ("font-size", "110%")]
-    )
+    HIGHLIGHT_TOTAL = {
+        "selector": "tr:last-child",
+        "props": [("font-weight", "bold"), ("font-size", "110%")],
+    }
 
-    MIN_MAX_WIDTH = dict(
-        selector="th", props=[("min-width", min_width), ("max-width", max_width)]
-    )
+    MIN_MAX_WIDTH = {
+        "selector": "th",
+        "props": [("min-width", min_width), ("max-width", max_width)],
+    }
     # Mind width defaults to "10em" based on hardcoded value in
-    # Styler.bar(). https://github.com/pandas-dev/pandas/blob/9222cb0c/pandas/io/formats/style.py#L3097
+    # Styler.bar().
+    # https://github.com/pandas-dev/pandas/blob/9222cb0c/pandas/io/formats/style.py#L3097
 
     # Enforce min and max width
     styler = styler.set_table_styles([MIN_MAX_WIDTH], overwrite=False)
