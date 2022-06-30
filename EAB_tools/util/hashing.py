@@ -64,14 +64,14 @@ def hash_df(
 def hash_mpl_fig(
     fig: Union[plt.Figure, plt.Axes],
     max_len: Optional[int] = eab_rc["hash_len"],
-    usedforsecurity: Optional[bool] = False,
+    usedforsecurity: bool = False,
 ) -> str:
     """Hash a matplotlib figure."""
     if isinstance(fig, plt.Axes):
         fig = fig.get_figure()
     fig.canvas.draw()
     buf = fig.canvas.buffer_rgba()
-    X = np.asarray(buf)
+    X = np.asarray(buf).tobytes()
 
     h = hashlib.sha1(usedforsecurity=usedforsecurity)
     h.update(X)

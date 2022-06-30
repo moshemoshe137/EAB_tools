@@ -2,11 +2,12 @@ import itertools
 from pathlib import Path
 from typing import (
     Callable,
+    Iterable,
     Literal,
     Union,
 )
 
-import dateutil
+import dateutil.tz
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,7 +24,7 @@ def iris() -> pd.DataFrame:
 
 
 @pytest.fixture(params=iris_df.columns)
-def iris_cols(request: pytest.FixtureRequest) -> pd.Series:
+def iris_cols(request) -> pd.Series:
     """Return iris dataframe columns, one after the next"""
     return iris_df[request.param]
 
@@ -61,7 +62,7 @@ def iris_single_col_subset(iris_cols: pd.Series, request):
         ),
     ]
 )
-def series(request: pytest.FixtureRequest) -> pd.Series:
+def series(request) -> pd.Series:
     """Return several series with unique dtypes"""
     # Fixture borrowed from pandas from
     # https://github.com/pandas-dev/pandas/blob/5b2fb093f6abd6f5022fe5459af8327c216c5808/pandas/tests/util/test_hashing.py
@@ -71,8 +72,8 @@ def series(request: pytest.FixtureRequest) -> pd.Series:
 pairs = list(itertools.permutations(iris_df.columns, 2))
 
 
-@pytest.fixture(params=pairs, ids=map(str, pairs))  # noqa
-def multiindex(iris: pd.DataFrame, request: pytest.FixtureRequest) -> pd.MultiIndex:
+@pytest.fixture(params=pairs, ids=list(map(str, pairs)))
+def multiindex(iris: pd.DataFrame, request) -> pd.MultiIndex:
     """Return MultiIndexes created from pairs of iris cols"""
     a_col, b_col = request.param
     a, b = iris[a_col], iris[b_col]
@@ -90,7 +91,7 @@ def multiindex(iris: pd.DataFrame, request: pytest.FixtureRequest) -> pd.MultiIn
     ],
     name="func",
 )
-def plot_func(request: pytest.FixtureRequest) -> Callable:
+def plot_func(request) -> Callable:
     """A variety of mathematical funcs callable on numeric numpy ndarrays"""
     return request.param
 
@@ -103,13 +104,13 @@ def plot_func(request: pytest.FixtureRequest) -> Callable:
     ],
     ids=lambda arr: str(arr.dtype),
 )
-def x_values(request: pytest.FixtureRequest) -> np.ndarray:
+def x_values(request) -> np.ndarray:
     """func inputs of different dtypes"""
     return request.param
 
 
 @pytest.fixture(params=["fig", "ax"])
-def _fig_or_ax(request: pytest.FixtureRequest) -> Literal["fig", "ax"]:
+def _fig_or_ax(request) -> Literal["fig", "ax"]:
     """Either returns 'fig' or 'ax'"""
     return request.param
 
@@ -117,7 +118,7 @@ def _fig_or_ax(request: pytest.FixtureRequest) -> Literal["fig", "ax"]:
 @pytest.fixture
 def mpl_plots(
     func: Callable[[np.ndarray], np.ndarray], x_values: np.ndarray
-) -> tuple[plt.Figure, plt.Axes]:
+) -> Iterable[dict[str, Union[plt.Figure, plt.Axes]]]:
     """Returns dict of {fix, ax}, for various funcs and domains"""
     x = x_values
     y = func(x)
@@ -129,20 +130,20 @@ def mpl_plots(
 
 
 @pytest.fixture
-def mpl_axes(mpl_plots: tuple[plt.Figure, plt.Axes]) -> plt.Axes:
+def mpl_axes(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Axes:
     """Returns a variety of `plt.Axes` objects"""
     return mpl_plots["ax"]
 
 
 @pytest.fixture
-def mpl_figs(mpl_plots: tuple[plt.Figure, plt.Axes]) -> plt.Figure:
+def mpl_figs(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Figure:
     """Returns a variety of `plt.Figure` objects"""
     return mpl_plots["fig"]
 
 
 @pytest.fixture
 def mpl_figs_and_axes(
-    mpl_plots: tuple[plt.Figure, plt.Axes], _fig_or_ax: Literal["fig", "ax"]
+    mpl_plots: dict[str, Union[plt.Figure, plt.Axes]], _fig_or_ax: Literal["fig", "ax"]
 ) -> Union[plt.Figure, plt.Axes]:
     """Returns either the figure or the axis of various plots"""
     return mpl_plots[_fig_or_ax]

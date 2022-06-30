@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 from typing import (
     Any,
+    ContextManager,
     Sequence,
     Union,
 )
@@ -133,13 +134,17 @@ class TestDisplayAndSave:
             an_expected_value = ""
 
         if pd.api.types.is_string_dtype(col):
-            context = pytest.raises(ValueError)
+            context: ContextManager = pytest.raises(ValueError)
         else:
             context = does_not_raise()
         with context:
             # str columns with incorrect format code should
             # throw a ValueError
-            d = {kwargs.pop("display_and_save_kw"): iris_single_col_subset}
+
+            # d is really dict[str, Union[str, pd.Index]], but mypy complains
+            d: dict[str, Any] = {
+                kwargs.pop("display_and_save_kw"): iris_single_col_subset
+            }
             styler = display_and_save_df(
                 iris, save_image=save_image, save_excel=save_excel, **d, **kwargs
             )
@@ -298,11 +303,12 @@ class TestDisplayAndSave:
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         # Should get ValueError on string dtypes
-        context = (
-            pytest.raises(ValueError, match="could not convert string to float")
-            if pd.api.types.is_string_dtype(iris[col_name])
-            else does_not_raise()
-        )
+        if pd.api.types.is_string_dtype(iris[col_name]):
+            context: ContextManager = pytest.raises(
+                ValueError, match="could not convert string to float"
+            )
+        else:
+            context = does_not_raise()
 
         with context:
             styler = display_and_save_df(

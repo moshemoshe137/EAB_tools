@@ -24,6 +24,8 @@ from EAB_tools.io.filenames import (
 )
 from EAB_tools.util.hashing import hash_df
 
+PathLike = Union[str, os.PathLike, Path]
+
 # Copied from Excel's conditional formatting Red-Yellow-Green built-in colormap.
 _xl_RYG_colors = ["#F8696B", "#FFEB84", "#63BE7B"]
 xl_RYG_cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
@@ -35,7 +37,7 @@ xl_GYR_cmap = xl_RYG_cmap.reversed()
 def display_and_save_df(
     df: Union[pd.DataFrame, pd.Series, Styler],
     caption: str = "",
-    filename: Optional[os.PathLike] = None,
+    filename: Optional[PathLike] = None,
     large_title: bool = True,
     large_col_names: bool = True,
     cell_borders: bool = True,
@@ -273,7 +275,7 @@ def display_and_save_df(
             percentage_format_subset = df.columns[percentage_format_subset_mask]
         except AttributeError as e:
             # Can only use .str accessor with Index, not MultiIndex
-            warnings.warn(e)
+            warnings.warn(str(e))
             percentage_format_subset = []
     # Apply the percentage format
     if percentage_format_subset is not None:
@@ -344,14 +346,14 @@ def display_and_save_df(
         styler = styler.format(**format_kwarg)
     for background_gradient_kwarg in kwargs.pop("background_gradient"):
         # By default, text_color_threshold should be 0. Everything in black text.
-        text_color_threshold = background_gradient_kwarg.pop(
-            "text_color_threshold", default=0
+        text_color_threshold = background_gradient_kwarg.get(
+            "text_color_threshold", 0.0
         )
         styler = styler.background_gradient(
             text_color_threshold=text_color_threshold, **background_gradient_kwarg
         )
     for bar_kwarg in kwargs.pop("bar"):
-        color = bar_kwarg.pop("color", default="#638ec6")
+        color = bar_kwarg.pop("color", "#638ec6")  # Default color from Excel
         styler = styler.bar(color=color, **bar_kwarg)
 
     # Determine a suitable filename/Excel sheet name
