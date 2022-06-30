@@ -5,7 +5,7 @@
 #
 # To "install" it:
 #
-#   git config --local blame.ignoreRevsFile .gitblameignore
+#   git config --local blame.ignoreRevsFile .git-blame-ignore-revs
 #
 # Thanks to https://github.com/pytest-dev/pytest/blob/aa55975c7d3f6c9f6d7f68accc41bb7cadf0eb9a/.gitblameignore
 # for the wonderful summary.
