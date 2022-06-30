@@ -12,3 +12,5 @@
 
 # Migrate code style to Black
 bcad1da0f4b51d47dc69d7e7fbf28ac3f4ebf111
+# Migrate code style to flake8
+769145afbbf327ce6ac2ebb2c58e0c210419f61e
