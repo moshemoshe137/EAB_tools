@@ -1,7 +1,9 @@
 """Utilities for hashing objects"""
 import hashlib
-
-from typing import Optional, Union
+from typing import (
+    Optional,
+    Union,
+)
 
 import matplotlib.pyplot as plt
 import numpy as np

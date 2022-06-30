@@ -1,13 +1,17 @@
 import itertools
 from pathlib import Path
-from typing import Callable, Union, Literal
+from typing import (
+    Callable,
+    Literal,
+    Union,
+)
 
 import dateutil
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pytest
 from pandas._testing import makeDateIndex
+import pytest
 
 iris_df: pd.DataFrame = pd.read_csv(Path(__file__).parent / "io/data/iris.csv")
 

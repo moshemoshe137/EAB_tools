@@ -2,7 +2,10 @@
 
 import pytest
 
-from EAB_tools.io.filenames import sanitize_filename, sanitize_xl_sheetname
+from EAB_tools.io.filenames import (
+    sanitize_filename,
+    sanitize_xl_sheetname,
+)
 
 
 class TestSanitizeFilename:

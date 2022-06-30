@@ -1,13 +1,16 @@
 """Tests for hashing"""
-from types import TracebackType
 import tkinter
+from types import TracebackType
 
 import matplotlib.pyplot as plt
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
-from EAB_tools.util.hashing import hash_df, hash_mpl_fig
+from EAB_tools.util.hashing import (
+    hash_df,
+    hash_mpl_fig,
+)
 
 
 class TestHashDf:

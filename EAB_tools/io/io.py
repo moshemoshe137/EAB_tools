@@ -1,21 +1,27 @@
 import os
-import warnings
 from pathlib import Path
 from typing import (
     Any,
-    Union,
     Optional,
     Sequence,
+    Union,
 )
+import warnings
 
+from IPython.display import display
 import dataframe_image as dfi  # noqa
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from IPython.display import display
-from pandas.io.formats.style import Styler, Subset
+from pandas.io.formats.style import (
+    Styler,
+    Subset,
+)
 
-from EAB_tools.io.filenames import sanitize_filename, sanitize_xl_sheetname
+from EAB_tools.io.filenames import (
+    sanitize_filename,
+    sanitize_xl_sheetname,
+)
 from EAB_tools.util.hashing import hash_df
 
 # Copied from Excel's conditional formatting Red-Yellow-Green built-in colormap.

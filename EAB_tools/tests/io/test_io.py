@@ -1,10 +1,14 @@
 # pylint: disable=C0114, C0116
+from contextlib import nullcontext as does_not_raise
 import itertools
 import os
-import re
-from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Union, Any, Sequence
+import re
+from typing import (
+    Any,
+    Sequence,
+    Union,
+)
 
 import pandas as pd
 import pytest
