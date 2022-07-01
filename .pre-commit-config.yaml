@@ -56,3 +56,10 @@ repos:
         pass_filenames: false
         types:
           - python
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.34.0
+    hooks:
+      - id: pyupgrade
+        args:
+          - --py39-plus
