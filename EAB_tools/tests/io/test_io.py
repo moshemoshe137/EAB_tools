@@ -28,7 +28,7 @@ except ImportError:
 @pytest.mark.parametrize(
     "save_image",
     [pytest.param(True, marks=pytest.mark.slow), False],
-    ids="save_image={0}".format,
+    ids="save_image={}".format,
 )
 @pytest.mark.parametrize(
     "save_excel",
@@ -39,7 +39,7 @@ except ImportError:
         ),
         False,
     ],
-    ids="save_excel={0}".format,
+    ids="save_excel={}".format,
 )
 class TestDisplayAndSave:
     @pytest.fixture(autouse=True)
