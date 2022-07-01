@@ -14,3 +14,8 @@ flake8-bugbear
 flake8-comprehensions
 isort
 mypy
+
+# Type stubs for mypy
+types-atomicwrites
+types-python-dateutil
+types-setuptools
