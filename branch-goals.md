@@ -6,7 +6,7 @@
     - ~~isort~~
     - ~~flake8~~
     - pylint
-    - mypy
+    - ~~mypy~~
     - ~~pre-commit~~
 - `pandas` also uses some linters:
     - ~~black~~
@@ -14,10 +14,10 @@
     - ~~flake8-bugbear~~  `# used by flake8, find likely bugs`
     - ~~flake8-comprehensions~~  `# used by flake8, linting of unnecessary comprehensions`
     - ~~isort~~  `# check that imports are in the right order`
-    - mypy
+    - ~~mypy~~
     - ~~pre-commit~~
     - ~~pycodestyle~~  `# used by flake 8`
-    - pyupgrade
+    - pyupgrade &lArr; _Working on this one now_
 
 
 Notably, pylint seems a little controversial and difficult to maintain. Still, doesn't necessarily hurt to have. When in doubt, I think I plan to follow [pandas](https://github.com/pandas-dev/pandas)'s conventions.
