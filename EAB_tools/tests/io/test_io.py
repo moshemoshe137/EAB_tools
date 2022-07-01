@@ -7,6 +7,7 @@ import re
 from typing import (
     Any,
     ContextManager,
+    Optional,
     Sequence,
     Union,
 )
@@ -42,22 +43,28 @@ except ImportError:
 )
 class TestDisplayAndSave:
     @pytest.fixture(autouse=True)
-    def _init(self, tmp_path: Path):
+    def _init(self, tmp_path: Path) -> None:
         os.chdir(tmp_path)
 
-    def test_doesnt_fail(self, iris: pd.DataFrame, save_image, save_excel):
+    def test_doesnt_fail(
+        self, iris: pd.DataFrame, save_image: bool, save_excel: bool
+    ) -> None:
         display_and_save_df(iris, save_image=save_image, save_excel=save_excel)
 
-    def test_series_doesnt_fail(self, series: pd.Series, save_image, save_excel):
+    def test_series_doesnt_fail(
+        self, series: pd.Series, save_image: bool, save_excel: bool
+    ) -> None:
         display_and_save_df(series, save_image=save_image, save_excel=save_excel)
 
-    def test_multiindex_index(self, iris: pd.DataFrame, save_image, save_excel):
+    def test_multiindex_index(
+        self, iris: pd.DataFrame, save_image: bool, save_excel: bool
+    ) -> None:
         iris_mi = iris.set_index("Name", append=True)
         display_and_save_df(iris_mi, save_image=save_image, save_excel=save_excel)
         display_and_save_df(iris_mi.T, save_image=save_image, save_excel=save_excel)
 
     @staticmethod
-    def col_name_from_iris_single_col_subset(col_name: Union[str, pd.Index]):
+    def col_name_from_iris_single_col_subset(col_name: Union[str, pd.Index]) -> str:
         return col_name if isinstance(col_name, str) else col_name[0]
 
     @pytest.mark.parametrize(
@@ -110,9 +117,9 @@ class TestDisplayAndSave:
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
         kwargs: dict[str, Any],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         """Test for expected text in Stylers"""
         iris, kwargs = iris.copy(), kwargs.copy()
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
@@ -134,7 +141,7 @@ class TestDisplayAndSave:
             an_expected_value = ""
 
         if pd.api.types.is_string_dtype(col):
-            context: ContextManager = pytest.raises(ValueError)
+            context: ContextManager[Optional[object]] = pytest.raises(ValueError)
         else:
             context = does_not_raise()
         with context:
@@ -153,8 +160,12 @@ class TestDisplayAndSave:
             assert an_expected_value in html
 
     def test_auto_percentage_format(
-        self, iris: pd.DataFrame, iris_cols: pd.Series, save_image, save_excel
-    ):
+        self,
+        iris: pd.DataFrame,
+        iris_cols: pd.Series,
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         col = iris_cols.name
         new_col = f"{col} %"
         df_w_pcnt_sign_col = iris.rename(columns={col: new_col})
@@ -176,8 +187,12 @@ class TestDisplayAndSave:
         assert an_expected_value in html
 
     def test_auto_thousands_format(
-        self, iris: pd.DataFrame, iris_cols: pd.Series, save_image, save_excel
-    ):
+        self,
+        iris: pd.DataFrame,
+        iris_cols: pd.Series,
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         iris, iris_cols = iris.copy(), iris_cols.copy()
         col = iris_cols.name
 
@@ -205,9 +220,9 @@ class TestDisplayAndSave:
         iris: pd.DataFrame,
         iris_cols: pd.Series,
         precision: int,
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         iris, iris_cols = iris.copy(), iris_cols.copy()
 
         if pd.api.types.is_numeric_dtype(iris_cols):
@@ -237,9 +252,9 @@ class TestDisplayAndSave:
         datetime_df: pd.DataFrame,
         subset: Sequence[str],
         strftime: str,
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         if len(subset) > 0:
             an_expected_value = datetime_df[subset[0]].iloc[0]
             an_expected_value = f"{an_expected_value:{strftime}}"
@@ -260,8 +275,12 @@ class TestDisplayAndSave:
         assert an_expected_value in html
 
     def test_auto_datetime_format(
-        self, datetime_and_float_df: pd.DataFrame, strftime: str, save_image, save_excel
-    ):
+        self,
+        datetime_and_float_df: pd.DataFrame,
+        strftime: str,
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         expected_values = [
             f"{datetime_and_float_df[col].iloc[-1]:{strftime}}" for col in "ABC"
         ]
@@ -277,7 +296,9 @@ class TestDisplayAndSave:
         html = styler.to_html()
         assert all(expected_value in html for expected_value in expected_values)
 
-    def test_hide_index(self, iris: pd.DataFrame, save_image, save_excel):
+    def test_hide_index(
+        self, iris: pd.DataFrame, save_image: bool, save_excel: bool
+    ) -> None:
         iris = iris.copy().set_index("Name")
         styler = display_and_save_df(
             iris, hide_index=True, save_image=save_image, save_excel=save_excel
@@ -297,14 +318,14 @@ class TestDisplayAndSave:
         self,
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         # Should get ValueError on string dtypes
         if pd.api.types.is_string_dtype(iris[col_name]):
-            context: ContextManager = pytest.raises(
+            context: ContextManager[Optional[object]] = pytest.raises(
                 ValueError, match="could not convert string to float"
             )
         else:
@@ -327,9 +348,9 @@ class TestDisplayAndSave:
         self,
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
 
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
@@ -359,9 +380,9 @@ class TestDisplayAndSave:
         self,
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
 
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
@@ -389,9 +410,9 @@ class TestDisplayAndSave:
         self,
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
@@ -420,9 +441,9 @@ class TestDisplayAndSave:
         self,
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
@@ -449,9 +470,9 @@ class TestDisplayAndSave:
         self,
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
@@ -471,7 +492,7 @@ class TestDisplayAndSave:
         assert expected_max_bar in html.casefold()
 
     @staticmethod
-    def bar_pcnt_from_html(html: str):
+    def bar_pcnt_from_html(html: str) -> pd.Series:
         regexp = (
             r"background: linear\-gradient\(90deg,.* #638ec6 "
             r"(?P<percentage>\d{1,2}\.\d)\%"
@@ -484,9 +505,9 @@ class TestDisplayAndSave:
         self,
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):
@@ -516,9 +537,9 @@ class TestDisplayAndSave:
         self,
         iris: pd.DataFrame,
         iris_single_col_subset: Union[str, pd.Index],
-        save_image,
-        save_excel,
-    ):
+        save_image: bool,
+        save_excel: bool,
+    ) -> None:
         col_name = self.col_name_from_iris_single_col_subset(iris_single_col_subset)
 
         if pd.api.types.is_string_dtype(iris[col_name]):

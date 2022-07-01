@@ -61,9 +61,9 @@ def display_and_save_df(
     bar_subset: Optional[Union[Subset, str]] = None,
     bar_vmin: Optional[int] = None,
     bar_vmax: Optional[int] = None,
-    format_kwargs: Sequence[dict[str, Any]] = None,
-    background_gradient_kwargs: Sequence[dict[str, Any]] = None,
-    bar_kwargs: Sequence[dict[str, Any]] = None,
+    format_kwargs: Optional[Sequence[dict[str, Any]]] = None,
+    background_gradient_kwargs: Optional[Sequence[dict[str, Any]]] = None,
+    bar_kwargs: Optional[Sequence[dict[str, Any]]] = None,
     save_excel: bool = False,
     save_image: bool = False,
     min_width: str = "10em",
@@ -86,7 +86,7 @@ def display_and_save_df(
         percentage_format_subset: Optional[Union[Subset, str]],
         thousands_format_subset: Optional[Union[Subset, str]],
         bar_subset: Optional[Union[Subset, str]],
-    ):
+    ) -> None:
         try:
             import openpyxl
         except ImportError as e:

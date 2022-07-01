@@ -1,18 +1,23 @@
 import itertools
 from pathlib import Path
 from typing import (
+    Any,
     Callable,
     Iterable,
     Literal,
     Union,
 )
 
+from _pytest.fixtures import SubRequest as PytestFixtureRequest
 import dateutil.tz
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from pandas._testing import makeDateIndex
 import pytest
+
+Numeric = np.number[Any]
 
 iris_df: pd.DataFrame = pd.read_csv(Path(__file__).parent / "io/data/iris.csv")
 
@@ -24,7 +29,7 @@ def iris() -> pd.DataFrame:
 
 
 @pytest.fixture(params=iris_df.columns)
-def iris_cols(request) -> pd.Series:
+def iris_cols(request: PytestFixtureRequest) -> pd.Series:
     """Return iris dataframe columns, one after the next"""
     return iris_df[request.param]
 
@@ -32,7 +37,9 @@ def iris_cols(request) -> pd.Series:
 @pytest.fixture(
     params=[str, pytest.param(lambda col_name: pd.Index([col_name]), id="pd.Index")]
 )
-def iris_single_col_subset(iris_cols: pd.Series, request):
+def iris_single_col_subset(
+    iris_cols: pd.Series, request: PytestFixtureRequest
+) -> Union[str, pd.Index]:
     """Return a col name as a str or pd.Index"""
     func = request.param
     col = iris_cols.name
@@ -62,7 +69,7 @@ def iris_single_col_subset(iris_cols: pd.Series, request):
         ),
     ]
 )
-def series(request) -> pd.Series:
+def series(request: PytestFixtureRequest) -> pd.Series:
     """Return several series with unique dtypes"""
     # Fixture borrowed from pandas from
     # https://github.com/pandas-dev/pandas/blob/5b2fb093f6abd6f5022fe5459af8327c216c5808/pandas/tests/util/test_hashing.py
@@ -73,7 +80,7 @@ pairs = list(itertools.permutations(iris_df.columns, 2))
 
 
 @pytest.fixture(params=pairs, ids=list(map(str, pairs)))
-def multiindex(iris: pd.DataFrame, request) -> pd.MultiIndex:
+def multiindex(iris: pd.DataFrame, request: PytestFixtureRequest) -> pd.MultiIndex:
     """Return MultiIndexes created from pairs of iris cols"""
     a_col, b_col = request.param
     a, b = iris[a_col], iris[b_col]
@@ -91,7 +98,9 @@ def multiindex(iris: pd.DataFrame, request) -> pd.MultiIndex:
     ],
     name="func",
 )
-def plot_func(request) -> Callable:
+def plot_func(
+    request: PytestFixtureRequest,
+) -> Callable[[npt.ArrayLike], npt.NDArray[Numeric]]:
     """A variety of mathematical funcs callable on numeric numpy ndarrays"""
     return request.param
 
@@ -104,20 +113,21 @@ def plot_func(request) -> Callable:
     ],
     ids=lambda arr: str(arr.dtype),
 )
-def x_values(request) -> np.ndarray:
+def x_values(request: PytestFixtureRequest) -> npt.NDArray[Numeric]:
     """func inputs of different dtypes"""
     return request.param
 
 
 @pytest.fixture(params=["fig", "ax"])
-def _fig_or_ax(request) -> Literal["fig", "ax"]:
+def _fig_or_ax(request: PytestFixtureRequest) -> Literal["fig", "ax"]:
     """Either returns 'fig' or 'ax'"""
     return request.param
 
 
 @pytest.fixture
 def mpl_plots(
-    func: Callable[[np.ndarray], np.ndarray], x_values: np.ndarray
+    func: Callable[[npt.ArrayLike], npt.NDArray[Numeric]],
+    x_values: npt.NDArray[Numeric],
 ) -> Iterable[dict[str, Union[plt.Figure, plt.Axes]]]:
     """Returns dict of {fix, ax}, for various funcs and domains"""
     x = x_values
@@ -167,7 +177,7 @@ strftime_codes = [
     params=iter(strftime_codes),
     ids=[f"{today:{strftime}}" for strftime in strftime_codes],
 )  # noqa
-def strftime(request) -> str:
+def strftime(request: PytestFixtureRequest) -> str:
     """Various different strftime format codes"""
     return request.param
 
@@ -182,7 +192,7 @@ def strftime(request) -> str:
         ),
     ]
 )
-def datetime_df(request) -> pd.DataFrame:
+def datetime_df(request: PytestFixtureRequest) -> pd.DataFrame:
     """DataFrame with datetime data, integer index, and str column names.
                    A          B          C
     0 2000-01-03 2000-01-02 2000-12-31
