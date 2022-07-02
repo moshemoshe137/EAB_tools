@@ -50,3 +50,15 @@ jobs:
         -v
         -m 'slow or not slow'
         --durations=100
+        --cov
+        --cov-report=xml
+        --cov-append
+
+    - name: Report Coverage
+      run: coverage report -m
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        flags: unittests,slow
+        fail_ci_if_error: true

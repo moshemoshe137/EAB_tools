@@ -1,6 +1,7 @@
 # Testing
 pytest
 flaky
+pytest-cov
 pytest-random-order
 
 # Additional functionality
