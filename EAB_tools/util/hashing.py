@@ -1,9 +1,8 @@
-"""Utilities for hashing objects"""
+"""Utilities for hashing objects."""
 import hashlib
-
 from typing import (
     Optional,
-    Union
+    Union,
 )
 
 import matplotlib.pyplot as plt
@@ -14,10 +13,10 @@ from EAB_tools.eab_rc import eab_rc
 
 
 def hash_df(
-        df: Union[pd.DataFrame, pd.Series, pd.Index, pd.MultiIndex],
-        styler: Optional[pd.io.formats.style.Styler] = None,
-        max_len: Optional[int] = eab_rc["hash_len"],
-        usedforsecurity: bool = False,
+    df: Union[pd.DataFrame, pd.Series, pd.Index, pd.MultiIndex],
+    styler: Optional[pd.io.formats.style.Styler] = None,
+    max_len: Optional[int] = eab_rc["hash_len"],
+    usedforsecurity: bool = False,
 ) -> str:
     """
     Create a unique hash for a pandas object.
@@ -57,22 +56,22 @@ def hash_df(
     h.update(pd.util.hash_pandas_object(df).values)
     h.update(pd.util.hash_pandas_object(df.columns).values)
     if styler is not None:
-        h.update(styler.to_html().encode('UTF8'))
+        h.update(styler.to_html().encode("UTF8"))
 
     return h.hexdigest()[:max_len]
 
 
 def hash_mpl_fig(
-        fig: Union[plt.Figure, plt.Axes],
-        max_len: Optional[int] = eab_rc["hash_len"],
-        usedforsecurity: Optional[bool] = False
+    fig: Union[plt.Figure, plt.Axes],
+    max_len: Optional[int] = eab_rc["hash_len"],
+    usedforsecurity: bool = False,
 ) -> str:
     """Hash a matplotlib figure."""
     if isinstance(fig, plt.Axes):
         fig = fig.get_figure()
     fig.canvas.draw()
     buf = fig.canvas.buffer_rgba()
-    X = np.asarray(buf)
+    X = np.asarray(buf).tobytes()
 
     h = hashlib.sha1(usedforsecurity=usedforsecurity)
     h.update(X)
