@@ -15,6 +15,7 @@ flake8-comprehensions
 isort
 mypy
 pyupgrade
+pydocstyle
 
 # Type stubs for mypy
 types-atomicwrites

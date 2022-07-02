@@ -43,6 +43,19 @@ strict_equality = true
 pretty = true
 show_error_codes = true
 
+[tool.pydocstyle]
+convention = "numpy"
+match = '''(?x)
+(?!  # Does NOT begin with:
+test_.*  # Ignore tests
+|conftest  # and ignore conftest.pt
+|__init__  # Ignore __init__.py files
+|tools  # Ignore unused tools.py
+|setup
+)
+.*\.py
+'''
+
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --no-flaky-report --random-order-seed=0 -m 'not slow'"
 doctest_optionflags = [
