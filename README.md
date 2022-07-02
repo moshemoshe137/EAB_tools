@@ -2,6 +2,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
+[![codecov](https://codecov.io/gh/moshemoshe137/EAB_tools/branch/dev/graph/badge.svg?token=IK9XOXSF3L)](https://codecov.io/gh/moshemoshe137/EAB_tools)
 
 Tools for analyzing data exported from the EAB Navigate Student Success Management Software.
 
