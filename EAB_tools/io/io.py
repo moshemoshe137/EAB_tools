@@ -1,3 +1,4 @@
+"""Methods to display and save DataFrames, plots."""
 import os
 from pathlib import Path
 from typing import (
@@ -69,7 +70,7 @@ def display_and_save_df(
     min_width: str = "10em",
     max_width: str = "25em",
 ) -> Styler:
-    """Does lots o stuff, very nicely"""
+    """Display and Save dfs, very nicely."""
     if hasattr(df, "copy"):
         df = df.copy(deep=True)
     if format_kwargs is None:

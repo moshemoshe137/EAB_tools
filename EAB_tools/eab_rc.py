@@ -1,4 +1,4 @@
-"""Default values used throughout the package"""
+"""Default values used throughout the package."""
 
 from collections import defaultdict
 from typing import Any
