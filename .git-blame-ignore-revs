@@ -1,0 +1,18 @@
+# List of revisions that can be ignored with git-blame(1).
+#
+# See `blame.ignoreRevsFile` in git-config(1) to enable it by default, or
+# use it with `--ignore-revs-file` manually with git-blame.
+#
+# To "install" it:
+#
+#   git config --local blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Thanks to https://github.com/pytest-dev/pytest/blob/aa55975c7d3f6c9f6d7f68accc41bb7cadf0eb9a/.gitblameignore
+# for the wonderful summary.
+
+# Migrate code style to Black
+bcad1da0f4b51d47dc69d7e7fbf28ac3f4ebf111
+# Migrate code style to flake8
+769145afbbf327ce6ac2ebb2c58e0c210419f61e
+# Migrate code import style to isort (black profile)
+2db90568c200cbf4816482a4c4063fa0db6bbc55

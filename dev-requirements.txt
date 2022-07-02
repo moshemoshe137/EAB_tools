@@ -1,0 +1,24 @@
+# Testing
+pytest
+flaky
+pytest-cov
+pytest-random-order
+
+# Additional functionality
+openpyxl
+
+# Code checks
+black == 22.3.0
+pre-commit
+flake8
+flake8-bugbear
+flake8-comprehensions
+isort
+mypy
+pyupgrade
+pydocstyle
+
+# Type stubs for mypy
+types-atomicwrites
+types-python-dateutil
+types-setuptools
