@@ -2,6 +2,27 @@
 build-backend = "setuptools.build_meta"
 requires = ["setuptools"]
 
+[project]
+name = "EAB_tools"
+version = "0.0.1"
+authors = [
+    { name = "Moshe Rubin", email = "mosherubin137@gmail.com" }
+]
+description = "Tools for analyzing data exported from the EAB Navigate Student Success Management Software."
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ['dependencies']  # Defined in setup.py
+
+[project.urls]
+"Homepage" = "https://github.com/moshemoshe137/EAB_tools"
+"Bug Tracker" = "https://github.com/moshemoshe137/EAB_tools/issues"
+
 [tool.black]
 target-version = ['py39', 'py310']
 

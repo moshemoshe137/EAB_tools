@@ -22,3 +22,6 @@ pydocstyle
 types-atomicwrites
 types-python-dateutil
 types-setuptools
+
+# My fork of dataframe_image
+dataframe_image @ git+https://github.com/moshemoshe137/dataframe_image.git
