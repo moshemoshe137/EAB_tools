@@ -33,7 +33,7 @@ jobs:
         python -m pip install --editable .
         foreach ($f in Get-ChildItem "*requirements*.txt")
         {
-          python -m pip install --requirements $f
+          python -m pip install --requirement $f
         }
       shell: pwsh
     - name: Lint with flake8
