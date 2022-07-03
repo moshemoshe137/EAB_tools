@@ -14,11 +14,15 @@ This software is currently in prerelease. The plan is to start by packing up exi
 
 ## Installation
 
-Use pip to install EAB_tools. You must have [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) or [Git for Windows](https://git-scm.com/download/win) installed.
+### Normal Usage:
+
+Use pip to install EAB_tools:
 
 ```bash
-pip install git+https://github.com/moshemoshe137/EAB_tools.git
+pip install EAB_tools
 ```
+
+### Development Mode:
 
 To install in development mode, first create a virtual environment:
 - On Unix/macOS run:
@@ -27,7 +31,7 @@ To install in development mode, first create a virtual environment:
     source .venv/bin/activate
     ```
 - On Windows:
-  - using Powershell:
+  - using PowerShell:
       ```pwsh
         py -m venv .venv
         .venv\Scripts\Activate.ps1
@@ -55,7 +59,7 @@ Installing EAB tools will install these packages and their dependencies:
 
 - [pandas](https://github.com/pandas-dev/pandas)
 - [IPython](https://github.com/ipython/ipython)
-- [dataframe_image](https://github.com/moshemoshe137/dataframe_image)
+- [dataframe_image](https://github.com/dexplo/dataframe_image)
 
 ## License
 
