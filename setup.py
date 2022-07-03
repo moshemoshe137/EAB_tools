@@ -7,7 +7,6 @@ setuptools.setup(
     author_email="mosherubin137@gmail.com",
     description="Tools for data exported from EAB",
     license="MIT",
-    packages=["EAB_tools"],
     install_requires=[
         "pandas",
         "ipython",

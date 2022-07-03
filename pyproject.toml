@@ -80,3 +80,6 @@ markers = [
 minversion = "6.0"
 required_plugins = "flaky pytest-random-order"
 xfail_strict = true
+
+[tool.setuptools.packages]
+find = {}  # Scanning implicit namespaces is active by default
