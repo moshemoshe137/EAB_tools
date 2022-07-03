@@ -1,6 +1,7 @@
 """Tests for hashing"""
 import tkinter
 from types import TracebackType
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,13 +26,13 @@ class TestHashDf:
         assert result == expected
 
     def test_expected_iris_columns(self, iris: pd.DataFrame) -> None:
-        hash_df_kwargs = {"max_len": 5, "usedforsecurity": False}
+        hash_df_kwargs: dict[str, Any] = {"max_len": 5, "usedforsecurity": False}
         expected = ["3ce8a", "7e266", "9759d", "2a060", "ea451"]
         result = [hash_df(iris[column], **hash_df_kwargs) for column in iris]
         assert expected == result
 
     def test_expected_iris_index(self, iris: pd.DataFrame) -> None:
-        hash_df_kwargs = {"max_len": 5, "usedforsecurity": False}
+        hash_df_kwargs: dict[str, Any] = {"max_len": 5, "usedforsecurity": False}
         expected = ["4f53f", "5da34", "ca488", "f1607", "5517a"]
         result = [hash_df(pd.Index(iris[column]), **hash_df_kwargs) for column in iris]
 
@@ -87,7 +88,7 @@ class TestHashMPLfig:
         fig, ax = plt.subplots()
         ax.plot(x, y)
 
-        kwargs = {"max_len": 7, "usedforsecurity": False}
+        kwargs: dict[str, Any] = {"max_len": 7, "usedforsecurity": False}
         assert hash_mpl_fig(fig, **kwargs) == expected
 
     def test_basic_consistency(self, mpl_figs_and_axes: plt.Figure) -> None:
