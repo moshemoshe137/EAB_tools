@@ -37,7 +37,7 @@ xl_GYR_cmap = xl_RYG_cmap.reversed()
 
 def display_and_save_df(
     df: Union[pd.DataFrame, pd.Series, Styler],
-    caption: str = "",
+    caption: Optional[str] = None,
     filename: Optional[PathLike] = None,
     large_title: bool = True,
     large_col_names: bool = True,
@@ -251,7 +251,8 @@ def display_and_save_df(
     styler = styler.set_table_styles([MIN_MAX_WIDTH], overwrite=False)
 
     # Apply the caption if it is not None
-    styler.set_caption(caption)
+    if caption is not None:
+        styler.set_caption(caption)
 
     # Apply optional styles
     if large_title:
@@ -358,7 +359,7 @@ def display_and_save_df(
         styler = styler.bar(color=color, **bar_kwarg)
 
     # Determine a suitable filename/Excel sheet name
-    if filename is None and styler.caption is not None and len(styler.caption) > 0:
+    if filename is None and styler.caption is not None:
         # If no filename is given, use the caption
         filename = f"{styler.caption}.df.png"
         filename = sanitize_filename(filename)
