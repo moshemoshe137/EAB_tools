@@ -269,7 +269,10 @@ def display_and_save_df(
         try:
             flattened_cols = df.columns.to_flat_index().astype("string")
             # Grab the cols that contain percent signs
-            percentage_format_subset_mask = flattened_cols.str.contains("%")
+            regex = "%|percent"  # Either literal % or the word "percent"
+            percentage_format_subset_mask = flattened_cols.str.contains(
+                regex, case=False
+            )
             # But don't accept cols that are a string dtype
             percentage_format_subset_mask &= [
                 not pd.api.types.is_string_dtype(df[col]) for col in df
