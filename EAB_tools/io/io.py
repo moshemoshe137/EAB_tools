@@ -35,6 +35,129 @@ xl_RYG_cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
 xl_GYR_cmap = xl_RYG_cmap.reversed()
 
 
+def _to_excel(
+    df: pd.DataFrame,
+    styler: Styler,
+    filepath: Path,
+    percentage_format_subset: Optional[Union[Subset, str]],
+    thousands_format_subset: Optional[Union[Subset, str]],
+    bar_subset: Optional[Union[Subset, str]],
+    date_format: str,
+    percentage_format_precision: int,
+    bar_vmin: Optional[float],
+    bar_vmax: Optional[float],
+) -> None:
+    """Export DataFrame to Excel. Used as a helper function to display_and_save_df."""
+    try:
+        import openpyxl
+    except ImportError as e:
+        raise ImportError("openpyxl is required for Excel functionality") from e
+
+    excel_output = filepath.parent / "output.xlsx"
+    # Determine ExcelWriter params based on if the file exists or not
+    mode, if_sheet_exists = ("a", "replace") if excel_output.exists() else ("w", None)
+
+    # Determine an Excel sheet name:
+    sn = filepath.name.replace(".png", "")
+    sn = sanitize_xl_sheetname(sn)
+
+    # Excel does NOT support datetimes with timezones
+    for col in df.select_dtypes(["datetime", "datetimetz"]).columns:
+        df[col] = df[col].dt.tz_localize(None)
+        styler.data[col] = df[col]
+        styler = styler.format(f"{{:{date_format}}}", subset=col)
+
+    # Export to Excel:
+    with pd.ExcelWriter(
+        excel_output, engine="openpyxl", mode=mode, if_sheet_exists=if_sheet_exists
+    ) as wb:
+        print(
+            f"Exporting to Excel as '{excel_output.resolve().parent}\\"
+            f"[{excel_output.name}]{sn}'",
+            end=" ... ",
+        )
+        styler.to_excel(wb, sheet_name=sn, engine="openpyxl")
+
+        if (
+            percentage_format_subset is not None
+            or thousands_format_subset is not None
+            or bar_subset is not None
+        ):
+            # Number formatting doesn't seem to carry over to
+            # Excel automatically with pandas. Since percentages, thousands, etc.
+            # are so widespread, we are using openpyxl to convert the number
+            # formats.
+
+            # Additionally, we are using openpyxl to add data bar conditional
+            # formatting for bar_subset.
+            if isinstance(percentage_format_subset, str):
+                percentage_format_subset = [percentage_format_subset]
+            if isinstance(thousands_format_subset, str):
+                thousands_format_subset = [thousands_format_subset]
+            if isinstance(bar_subset, str):
+                bar_subset = [bar_subset]
+            len_index = df.index.nlevels
+
+            # Get the worksheet
+            ws: openpyxl.workbook.workbook.Worksheet = wb.book[sn]
+
+            # Determine the 0-based pd indices for number formatting
+            pcnt_cols = (
+                [df.columns.get_loc(col) for col in percentage_format_subset]
+                if percentage_format_subset is not None
+                else []
+            )
+            tsnd_cols = (
+                [df.columns.get_loc(col) for col in thousands_format_subset]
+                if thousands_format_subset is not None
+                else []
+            )
+            bar_cols = (
+                [df.columns.get_loc(col) for col in bar_subset]
+                if bar_subset is not None
+                else []
+            )
+
+            # Iterate through the columns, applying styles to all
+            # cells in a column
+            for col_num, col in enumerate(ws.iter_cols()):
+                # Apply percentage, thousands number formats
+                if np.any(col_num - len_index in pcnt_cols):
+                    for cell in col:
+                        code = (
+                            f"0{'.' * (percentage_format_precision > 0)}"
+                            f"{'0' * percentage_format_precision}%"
+                        )
+                        cell.number_format = code
+                if col_num - len_index in tsnd_cols:
+                    for cell in col:
+                        cell.number_format = "#,##0"
+
+                # Add bar conditional formatting, using the style's vmin and vmax,
+                # if given
+                rule = openpyxl.formatting.rule.DataBarRule(
+                    start_type="num" if bar_vmin else "min",
+                    start_value=bar_vmin,
+                    end_type="num" if bar_vmax else "max",
+                    end_value=bar_vmax,
+                    color="638EC6",
+                    showValue=True,
+                    minLength=None,
+                    maxLength=None,
+                )
+                for bar_col in bar_cols:
+                    letter = openpyxl.utils.cell.get_column_letter(
+                        bar_col + len_index + 1
+                    )
+                    end_num = len(df) + df.columns.nlevels
+                    xl_range = f"{letter}1:{letter}{end_num}"
+
+                    # I could not even find the function
+                    # ws.conditional_formatting.add() in the openpyxl docs. Thank
+                    # god for https://stackoverflow.com/a/32454012.
+                    ws.conditional_formatting.add(xl_range, rule)
+
+
 def display_and_save_df(
     df: Union[pd.DataFrame, pd.Series, Styler],
     caption: Optional[str] = None,
@@ -230,125 +353,6 @@ def display_and_save_df(
     if bar_kwargs is None:
         bar_kwargs = []
 
-    def to_excel(
-        df: pd.DataFrame,
-        styler: Styler,
-        filepath: Path,
-        percentage_format_subset: Optional[Union[Subset, str]],
-        thousands_format_subset: Optional[Union[Subset, str]],
-        bar_subset: Optional[Union[Subset, str]],
-    ) -> None:
-        try:
-            import openpyxl
-        except ImportError as e:
-            raise ImportError("openpyxl is required for Excel functionality") from e
-
-        excel_output = filepath.parent / "output.xlsx"
-        # Determine ExcelWriter params based on if the file exists or not
-        mode, if_sheet_exists = (
-            ("a", "replace") if excel_output.exists() else ("w", None)
-        )
-
-        # Determine an Excel sheet name:
-        sn = filepath.name.replace(".png", "")
-        sn = sanitize_xl_sheetname(sn)
-
-        # Excel does NOT support datetimes with timezones
-        for col in df.select_dtypes(["datetime", "datetimetz"]).columns:
-            df[col] = df[col].dt.tz_localize(None)
-            styler.data[col] = df[col]
-            styler = styler.format(f"{{:{date_format}}}", subset=col)
-
-        # Export to Excel:
-        with pd.ExcelWriter(
-            excel_output, engine="openpyxl", mode=mode, if_sheet_exists=if_sheet_exists
-        ) as wb:
-            print(
-                f"Exporting to Excel as '{excel_output.resolve().parent}\\"
-                f"[{excel_output.name}]{sn}'",
-                end=" ... ",
-            )
-            styler.to_excel(wb, sheet_name=sn, engine="openpyxl")
-
-            if (
-                percentage_format_subset is not None
-                or thousands_format_subset is not None
-                or bar_subset is not None
-            ):
-                # Number formatting doesn't seem to carry over to
-                # Excel automatically with pandas. Since percentages, thousands, etc.
-                # are so widespread, we are using openpyxl to convert the number
-                # formats.
-
-                # Additionally, we are using openpyxl to add data bar conditional
-                # formatting for bar_subset.
-                if isinstance(percentage_format_subset, str):
-                    percentage_format_subset = [percentage_format_subset]
-                if isinstance(thousands_format_subset, str):
-                    thousands_format_subset = [thousands_format_subset]
-                if isinstance(bar_subset, str):
-                    bar_subset = [bar_subset]
-                len_index = df.index.nlevels
-
-                # Get the worksheet
-                ws: openpyxl.workbook.workbook.Worksheet = wb.book[sn]
-
-                # Determine the 0-based pd indices for number formatting
-                pcnt_cols = (
-                    [df.columns.get_loc(col) for col in percentage_format_subset]
-                    if percentage_format_subset is not None
-                    else []
-                )
-                tsnd_cols = (
-                    [df.columns.get_loc(col) for col in thousands_format_subset]
-                    if thousands_format_subset is not None
-                    else []
-                )
-                bar_cols = (
-                    [df.columns.get_loc(col) for col in bar_subset]
-                    if bar_subset is not None
-                    else []
-                )
-
-                # Iterate through the columns, applying styles to all
-                # cells in a column
-                for col_num, col in enumerate(ws.iter_cols()):
-                    # Apply percentage, thousands number formats
-                    if np.any(col_num - len_index in pcnt_cols):
-                        for cell in col:
-                            code = (
-                                f"0{'.' * (percentage_format_precision > 0)}"
-                                f"{'0' * percentage_format_precision}%"
-                            )
-                            cell.number_format = code
-                    if col_num - len_index in tsnd_cols:
-                        for cell in col:
-                            cell.number_format = "#,##0"
-
-                    # Add bar conditional formatting, using the style's vmin and vmax,
-                    # if given
-                    rule = openpyxl.formatting.rule.DataBarRule(
-                        start_type="num" if bar_vmin else "min",
-                        start_value=bar_vmin,
-                        end_type="num" if bar_vmax else "max",
-                        end_value=bar_vmax,
-                        color="638EC6",
-                        showValue=True,
-                        minLength=None,
-                        maxLength=None,
-                    )
-                    for bar_col in bar_cols:
-                        letter = openpyxl.utils.cell.get_column_letter(
-                            bar_col + len_index + 1
-                        )
-                        end_num = len(df) + df.columns.nlevels
-                        xl_range = f"{letter}1:{letter}{end_num}"
-
-                        # I could not even find the function
-                        # ws.conditional_formatting.add() in the openpyxl docs. Thank
-                        # god for https://stackoverflow.com/a/32454012.
-                        ws.conditional_formatting.add(xl_range, rule)
-
     # Convert pd.Series to Frame if needed
     if isinstance(df, pd.Series):
         df = df.to_frame()
@@ -527,13 +531,17 @@ def display_and_save_df(
 
     # Save the Styler to Excel sheet
     if save_excel:
-        to_excel(
-            df,
-            styler,
-            filename,
-            percentage_format_subset,
-            thousands_format_subset,
-            bar_subset,
+        _to_excel(
+            df=df,
+            styler=styler,
+            filepath=filename,
+            percentage_format_subset=percentage_format_subset,
+            thousands_format_subset=thousands_format_subset,
+            bar_subset=bar_subset,
+            date_format=date_format,
+            percentage_format_precision=percentage_format_precision,
+            bar_vmin=bar_vmin,
+            bar_vmax=bar_vmax,
         )
 
     # Finally, display with styler with IPython
