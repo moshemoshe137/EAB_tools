@@ -70,7 +70,157 @@ def display_and_save_df(
     min_width: str = "10em",
     max_width: str = "25em",
 ) -> Styler:
-    """Display and Save dfs, very nicely."""
+    """
+    Display and save a pandas DataFrame or Styler object.
+
+    This functions provides lots of pre-built styling for a pandas DataFrame, with
+    highly configurable additional options. Optionally, it can save the DataFrame as
+    a png image or export to Excel.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame, pandas.Series or pd.io.formats.style.Styler
+        The pandas object to display and save.
+    caption : str, optional
+        The caption to be used on the HTML table. The value of caption will also be
+        used for the filename and Excel sheetname if filename is not specified and
+        either save_excel or save_image is True.
+    filename : str, optional
+        When saving to Excel or image, the filename to use. When the filename is not
+        specified, the value of caption will be used.
+    large_title : bool, default True
+        Whether to make the title large on the HTML table. Currently, it sets the
+        title fontsize to "225%" and cannot be adjusted at this time.
+    large_col_names : bool, default True
+        Whether to make column headers large. Currently, it sets the column headers
+        fontsize to "100%", the "boarder-style" to "solid", and the alignment to
+        "center".
+    cell_borders : bool, default True
+        Whether to draw solid cell borders. The border width is determined by
+        `boarder_width`.
+    highlight_total_row : bool, default False
+        Whether to highlight the final row on the table to give it the appearance of a
+        grand totals row. Currently, sets the font to "bold" and the fontsize to "110%".
+    border_width : str, default "1px"
+        If cell_borders is True, then use this value for the border width. Must be a
+        valid HTML border-width.
+
+        Note that if cell_borders is False, this value is completely ignored.
+    thousands_format_subset : slice, sequence or str, optional, default "auto"
+        The subset to format with a thousand's seperator. Either a slice, a single
+        column name, or a sequence of column names. If left to its default value of
+        "auto", then all columns of dtype `int` are selected.
+    date_format_subset : slice, sequence or str, optional, default "auto"
+        The subset to format with a call to `strftime`. Either a slice, a single column
+        name, or a sequence of column names. If left to its default value of "auto",
+        then all columns of dtype "datetime" are selected.
+    date_format : str, default "%#m/%#d/%Y"
+        If date_format_subset is not None, the value to use in calls to `strftime` for
+        the data_format_subset. Must be a valid strftime-code.
+    percentage_format_subset : slice, sequence or str, optional, default "auto"
+        The subset to format as a percentage. Either a slice, a single column name, or a
+        sequence of column names. If left to its default value of "auto", it will
+        attempt to automatically select all columns containing a literal % or the
+        literal word "percent". This automatic selection is not fool-proof and may not
+        work for all types of MultiIndex objects.
+    percentage_format_precision : int, default 1
+        if percentage_format_subset is not None, the number of decimal places to show in
+        each column that is percentage formatted.
+    float_format_subset : slice, sequence or str, optional, default "auto"
+        The subset to format as a float. These columns will obey the
+        float_format_precision provided. Either a slice, a single column name, or a
+        sequence of column names. If left to its default value of "auto", it selects all
+        columns with dtype float that are *not* in the percentage_format_subset.
+    float_format_precision : int, default 1
+        If float_format_subset is not None, the precision to use when displaying
+        values from the subset.
+    hide_index : bool, default False
+        Whether to hide the index in the final HTML table. This is useful when the
+        index has no meaningful interpretation.
+    convert_dtypes : bool, default True
+        Attempt to convert columns to their optimal dtypes using
+        `pandas.DataFrame.convert_dtypes`. This can be useful for ensuring that
+        automatic subsets work correctly, but can cause errors in cases where pandas
+        incorrectly infers the dtypes.
+    ryg_bg_subset : slice, subset or str, optional
+        The subset to format with "conditional formatting", going from red -> yellow ->
+        green in ascending order. It is meant to resemble Excel's build-in RYG
+        conditional formatting. Either a slice, a single column name, or a sequence of
+        column names.
+    ryg_bg_vmin : float, optional
+        If ryg_bg_subset is not None, the minimum data value that corresponds to the
+        minimum red value.
+    ryg_bg_vmax : float, optional
+        If ryg_bg_subset is not None, the maximum data value that corresponds to the
+        maximum green value.
+    gyr_bg_subset : slice, subset or str, optional
+        The subset to format with "conditional formatting", going from green -> yellow
+        -> red in ascending order. It is meant to resemble Excel's build-in GYR
+         conditional formatting. Either a slice, a single column name, or a sequence of
+         column names.
+    gyr_bg_vmin : float, optional
+        If gyr_bg_subset is not None, the minimum data value that corresponds to the
+        minimum green color.
+    gyr_bg_vmax : float, optional
+        If gyr_bg_subset is not None, the maximum data value that corresponds to the
+        maximum red color.
+    bar_subset : slice, subset or str, optional
+        The subset to format with bar charts in the cell backgrounds. Either a slice, a
+        single column name, or a sequence of column names.
+    bar_vmin : float, optional
+        If bar_subset is not None, the minimum data value defining the left-hand limit
+        of the bar drawing range.
+    bar_vmax : float, optional
+        If bar_subset is not None, the maximum data value defining the right-hand limit
+        of the bar drawing range.
+    format_kwargs : dict or sequence of dicts, optional
+        When the above parameters are not sufficient, each of the dicts in this list
+        will be passed to Styler.format in order as keyword arguments.
+    background_gradient_kwargs : dict or sequence of dicts, optional
+        When the above parameters are not sufficient, each of the dicts in this list
+        will be passed to `Styler.background_gradient` in order as keyword arguments.
+    bar_kwargs : dict or sequence of dicts, optional
+        When the above parameters are not sufficient, each of the dicts in this list
+        will be passed to `Styler.bar` in order as keyword arguments.
+    save_excel : bool, default False
+        Whether to save the output to an Excel sheet. If True, it will create an Excel
+        workbook named "output.xlsx" in the same directory as filename. The caption is
+        used for the sheetname, and may be corerced to a valid Excel sheetname.
+
+        Subsequent calls to display_and_save_df in the same directory will *append* to
+        the workbook "output.xlsx" if it already exists. If a sheet with the same name
+        already exists, it will be overwritten.
+    save_image : bool, default False
+        Whether to save the output to a png image using the package dataframe_image. If
+        True, it will create a png image based on the filename or filepath.
+    min_width : str, default "10em"
+        The minimum width to use when drawing the HTML table. Must be a valid HTML
+        measurement.
+    max_width : str, default "25em"
+        The maximum width to use when drawing the HTML table. Must be a valid HTML
+        measurement.
+
+    Returns
+    -------
+    pandas.io.formats.style.Styler
+        The generated Styler object.
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({'Letter': list('ABC'), 'Number': range(1, 4)})
+    >>> df
+      Letter  Number
+    0      A       1
+    1      B       2
+    2      C       3
+    >>> display_and_save_df(df)
+    <pandas.io.formats.style.Styler object at 0x...>
+    <pandas.io.formats.style.Styler object at 0x...>
+    >>> styler = df.style.format(na_rep="Omg! Empty!")
+    >>> display_and_save_df(styler, hide_index=True)
+    <pandas.io.formats.style.Styler object at 0x...>
+    <pandas.io.formats.style.Styler object at 0x...>
+    """
     if hasattr(df, "copy"):
         df = df.copy(deep=True)
     if format_kwargs is None:

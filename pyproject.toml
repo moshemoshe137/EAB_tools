@@ -72,7 +72,8 @@ test_.*  # Ignore tests
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --no-flaky-report --random-order-seed=0 -m 'not slow'"
 doctest_optionflags = [
-    "NORMALIZE_WHITESPACE"
+    "NORMALIZE_WHITESPACE",
+    "ELLIPSIS"
 ]
 markers = [
     "slow: mark a test as slow",
