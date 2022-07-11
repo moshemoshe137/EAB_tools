@@ -27,6 +27,10 @@ def sanitize_filename(filename: str) -> str:
     str
         The cleaned up filename.
 
+    See Also
+    --------
+    sanitize_xl_sheetname : Ensure valid Excel sheetnames.
+
     Examples
     --------
     >>> sanitize_filename('python is fun 🐍.py')
