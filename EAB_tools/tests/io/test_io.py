@@ -574,6 +574,7 @@ class TestDisplayAndSaveDf:
     #  above, if possible...
 
 
+@pytest.mark.flaky(rerun_filter=tm._is_tkinter_error, max_runs=5)
 @pytest.mark.parametrize("save_image", [True, False], ids="save_image={}".format)
 class TestDisplayAndSaveFig:
     def test_doesnt_fail(
