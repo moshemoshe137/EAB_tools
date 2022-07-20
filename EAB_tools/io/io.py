@@ -559,7 +559,7 @@ def display_and_save_fig(
     save_image: bool = False,
 ) -> None:
     """Display and save a `matplotlib` figure."""
-    plt.show()
+    plt.show(block=False)
 
     if not save_image:
         # If we're not saving the image, then this is the end of the function.
@@ -572,7 +572,7 @@ def display_and_save_fig(
 
     # Attempt to infer the filename if it is None
     if filename is None:
-        if fig._subtitle is not None:
+        if fig._suptitle is not None:
             filename = fig._suptitle.get_text()
         elif fig.axes[0].title is not None:
             filename = fig.axes[0].title.get_text()
@@ -586,4 +586,4 @@ def display_and_save_fig(
     filepath = Path(filename)
 
     print(f"Saving as {filepath} ... ", end="")
-    fig.savefig()
+    fig.savefig(filepath)

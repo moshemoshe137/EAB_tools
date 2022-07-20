@@ -12,10 +12,15 @@ from typing import (
     Union,
 )
 
+from matplotlib import pyplot as plt
 import pandas as pd
 import pytest
 
-from EAB_tools.io.io import display_and_save_df
+from EAB_tools.io.io import (
+    PathLike,
+    display_and_save_df,
+    display_and_save_fig,
+)
 
 try:
     import openpyxl as _openpyxl  # noqa: F401 # 'openpyxl ... imported but unused
@@ -25,27 +30,33 @@ except ImportError:
     _HAS_OPENPYXL = False
 
 
+@pytest.fixture(autouse=True)
+def _init(tmp_path: Path) -> None:
+    os.chdir(tmp_path)
+
+
+def _test_photos_are_equal(base: PathLike, other: PathLike) -> bool:
+    # https://stackoverflow.com/a/34669225
+    return open(base, "rb").read() == open(other, "rb").read()
+
+
+SaveImageTrueParam = pytest.param(True, marks=pytest.mark.slow)
+SaveExcelTrueParam = pytest.param(
+    True, marks=pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl required")
+)
+
+
 @pytest.mark.parametrize(
     "save_image",
-    [pytest.param(True, marks=pytest.mark.slow), False],
+    [SaveImageTrueParam, False],
     ids="save_image={}".format,
 )
 @pytest.mark.parametrize(
     "save_excel",
-    [
-        pytest.param(
-            True,
-            marks=pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl required"),
-        ),
-        False,
-    ],
+    [SaveExcelTrueParam, False],
     ids="save_excel={}".format,
 )
-class TestDisplayAndSave:
-    @pytest.fixture(autouse=True)
-    def _init(self, tmp_path: Path) -> None:
-        os.chdir(tmp_path)
-
+class TestDisplayAndSaveDf:
     def test_doesnt_fail(
         self, iris: pd.DataFrame, save_image: bool, save_excel: bool
     ) -> None:
@@ -566,3 +577,41 @@ class TestDisplayAndSave:
 
     # TODO: tests of additional *_kwargs. Should somehow parameterize all the tests
     #  above, if possible...
+
+
+@pytest.mark.parametrize("save_image", [True, False], ids="save_image={}".format)
+class TestDisplayAndSaveFig:
+    def test_doesnt_fail(
+        self, mpl_figs_and_axes: Union[plt.Figure, plt.Axes], save_image: bool
+    ) -> None:
+        display_and_save_fig(mpl_figs_and_axes, save_image=save_image)
+        if plt.get_backend().casefold() == "tkagg":
+            # Rapidly minimizes the window to prevent strobing effect.
+            # Works on my Windows 10, at least...
+            plt.get_current_fig_manager().window.state("iconic")
+
+    def test_expected_output(
+        self,
+        save_image: bool,
+        iris: pd.DataFrame,
+        tmp_path: Path,
+    ) -> None:
+        fig, ax = plt.subplots(
+            subplot_kw={
+                "xlabel": "SepalLength",
+                "ylabel": "SepalWidth",
+                "title": self.test_expected_output.__name__,
+            },
+            facecolor="white",
+        )
+
+        for iris_type in iris["Name"].unique():
+            subset: pd.DataFrame = iris[iris["Name"] == iris_type]
+            ax.plot("SepalLength", "SepalWidth", "o", data=subset, label=iris_type)
+        ax.legend()
+
+        display_and_save_fig(fig, save_image=True, filename="foo.png")
+        assert _test_photos_are_equal(
+            tmp_path / "foo.png",
+            Path(__file__).parent / "data" / "test_expected_output.png",
+        )
