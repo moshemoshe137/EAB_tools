@@ -16,8 +16,8 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import pytest
 
+import EAB_tools._testing as tm
 from EAB_tools.io.io import (
-    PathLike,
     display_and_save_df,
     display_and_save_fig,
 )
@@ -33,11 +33,6 @@ except ImportError:
 @pytest.fixture(autouse=True)
 def _init(tmp_path: Path) -> None:
     os.chdir(tmp_path)
-
-
-def _test_photos_are_equal(base: PathLike, other: PathLike) -> bool:
-    # https://stackoverflow.com/a/34669225
-    return open(base, "rb").read() == open(other, "rb").read()
 
 
 SaveImageTrueParam = pytest.param(True, marks=pytest.mark.slow)
@@ -611,7 +606,7 @@ class TestDisplayAndSaveFig:
         ax.legend()
 
         display_and_save_fig(fig, save_image=True, filename="foo.png")
-        assert _test_photos_are_equal(
+        assert tm._test_photos_are_equal(
             tmp_path / "foo.png",
             Path(__file__).parent / "data" / "test_expected_output.png",
         )

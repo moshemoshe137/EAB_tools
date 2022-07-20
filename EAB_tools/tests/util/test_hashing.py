@@ -1,6 +1,4 @@
 """Tests for hashing"""
-import tkinter
-from types import TracebackType
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -8,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import EAB_tools._testing as tm
 from EAB_tools.util.hashing import (
     hash_df,
     hash_mpl_fig,
@@ -66,14 +65,7 @@ class TestHashDf:
         assert hash_df(iris, style1) != hash_df(iris, style2)
 
 
-def _is_tkinter_error(
-    err: tuple[type, Exception, TracebackType],
-    *args: object,  # Flaky will pass more objects that I don't care about
-) -> bool:
-    return isinstance(err[1], tkinter.TclError)
-
-
-@pytest.mark.flaky(rerun_filter=_is_tkinter_error, max_runs=5)
+@pytest.mark.flaky(rerun_filter=tm._is_tkinter_error, max_runs=5)
 class TestHashMPLfig:
     """Tests for EAB_tools.util.io.hashing.hash_mpl_fig"""
 
