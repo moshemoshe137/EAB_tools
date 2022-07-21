@@ -16,6 +16,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import pytest
 
+from EAB_tools import sanitize_filename
 import EAB_tools._testing as tm
 from EAB_tools.io.io import (
     display_and_save_df,
@@ -577,14 +578,16 @@ class TestDisplayAndSaveDf:
 @pytest.mark.flaky(rerun_filter=tm._is_tkinter_error, max_runs=5)
 @pytest.mark.parametrize("save_image", [True, False], ids="save_image={}".format)
 class TestDisplayAndSaveFig:
+    def display_and_save_fig(self, *args: Any, **kwargs: Any) -> None:
+        from EAB_tools.io.io import display_and_save_fig as display_and_save_fig_og
+
+        display_and_save_fig_og(*args, **kwargs)
+        tm._minimize_tkagg()
+
     def test_doesnt_fail(
         self, mpl_figs_and_axes: Union[plt.Figure, plt.Axes], save_image: bool
     ) -> None:
         display_and_save_fig(mpl_figs_and_axes, save_image=save_image)
-        if plt.get_backend().casefold() == "tkagg":
-            # Rapidly minimizes the window to prevent strobing effect.
-            # Works on my Windows 10, at least...
-            plt.get_current_fig_manager().window.state("iconic")
 
     def test_expected_output(
         self,
@@ -611,3 +614,23 @@ class TestDisplayAndSaveFig:
             tmp_path / "foo.png",
             Path(__file__).parent / "data" / "test_expected_output.png",
         )
+        plt.close(fig)
+
+    def test_infer_filename_from_fig_suptitle(
+        self,
+        save_image: bool,
+        mpl_figs_and_axes: Union[plt.Figure, plt.Axes],
+        tmp_path: Path,
+    ) -> None:
+        fig: plt.Figure
+        if isinstance(mpl_figs_and_axes, plt.Axes):
+            fig = mpl_figs_and_axes.get_figure()
+        else:
+            fig = mpl_figs_and_axes
+
+        name = sanitize_filename(str(fig))
+        fig.suptitle(name)
+
+        display_and_save_fig(fig, save_image=True)
+        tm._minimize_tkagg()
+        assert Path(f"{name}.png").exists()
