@@ -580,7 +580,7 @@ class TestDisplayAndSaveDf:
 @pytest.mark.parametrize("save_image", [True, False], ids="save_image={}".format)
 class TestDisplayAndSaveFig:
     def display_and_save_fig(self, *args: Any, **kwargs: Any) -> None:
-        from EAB_tools.io.io import display_and_save_fig as display_and_save_fig_og
+        from EAB_tools.io.display import display_and_save_fig as display_and_save_fig_og
 
         display_and_save_fig_og(*args, **kwargs)
         tm._minimize_tkagg()
