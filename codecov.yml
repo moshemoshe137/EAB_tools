@@ -1,3 +1,7 @@
+codecov:
+  notify:
+    # https://github.com/pandas-dev/pandas/pull/40394#discussion_r593796630
+    after_n_builds: 5
 comment: false
 
 coverage:
