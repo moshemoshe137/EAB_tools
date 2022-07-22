@@ -16,12 +16,13 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import pytest
 
-from EAB_tools import sanitize_filename
-import EAB_tools._testing as tm
-from EAB_tools.io.io import (
+import EAB_tools as eab
+from EAB_tools import (
     display_and_save_df,
     display_and_save_fig,
+    sanitize_filename,
 )
+import EAB_tools._testing as tm
 
 try:
     import openpyxl as _openpyxl  # noqa: F401 # 'openpyxl ... imported but unused
@@ -620,7 +621,6 @@ class TestDisplayAndSaveFig:
         self,
         save_image: bool,
         mpl_figs_and_axes: Union[plt.Figure, plt.Axes],
-        tmp_path: Path,
     ) -> None:
         fig: plt.Figure
         if isinstance(mpl_figs_and_axes, plt.Axes):
@@ -634,3 +634,13 @@ class TestDisplayAndSaveFig:
         display_and_save_fig(fig, save_image=True)
         tm._minimize_tkagg()
         assert Path(f"{name}.png").exists()
+
+    def test_filename_from_hash(
+        self,
+        save_image: bool,
+        mpl_figs_and_axes: Union[plt.Figure, plt.Axes],
+    ) -> None:
+        expected_hash = eab.util.hash_mpl_fig(mpl_figs_and_axes)
+        display_and_save_fig(mpl_figs_and_axes, save_image=True)
+
+        assert Path(f"{expected_hash}.png").exists()

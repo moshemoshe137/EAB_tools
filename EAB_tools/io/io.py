@@ -574,7 +574,7 @@ def display_and_save_fig(
     if filename is None:
         if fig._suptitle is not None:
             filename = fig._suptitle.get_text()
-        elif fig.axes[0].title is not None:
+        elif fig.axes[0].title.get_text() != "":
             filename = fig.axes[0].title.get_text()
         else:
             filename = hash_mpl_fig(fig)
