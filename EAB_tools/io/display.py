@@ -580,6 +580,8 @@ def display_and_save_fig(
             filename = hash_mpl_fig(fig)
     filename = sanitize_filename(filename)
 
+    # Needed to make `mypy` happy
+    filename = str(filename)
     if filename[-4:] != ".png":
         filename = filename + ".png"
 
