@@ -1,9 +1,11 @@
 import itertools
+import os
 from pathlib import Path
 from typing import (
     Any,
     Callable,
     Iterable,
+    Iterator,
     Literal,
     Union,
 )
@@ -19,7 +21,7 @@ import pytest
 
 Numeric = np.number[Any]
 
-iris_df: pd.DataFrame = pd.read_csv(Path(__file__).parent / "io/data/iris.csv")
+iris_df: pd.DataFrame = pd.read_csv(Path(__file__).parent / "tests/io/data/iris.csv")
 
 
 @pytest.fixture
@@ -221,3 +223,23 @@ def datetime_and_float_df(datetime_df: pd.DataFrame) -> pd.DataFrame:
     """datetime_df with additional columns of random positive and negative floats"""
     datetime_df[list("DE")] = np.random.uniform(-1, 1, (10, 2))
     return datetime_df
+
+
+@pytest.fixture(autouse=True)
+def _docstring_tmp_path(request: PytestFixtureRequest) -> Iterator[None]:
+    # Almost completely adapted from a kind soul at https://stackoverflow.com/a/46991331
+    # Trigger ONLY for the doctests.
+    doctest_plugin = request.config.pluginmanager.getplugin("doctest")
+    if isinstance(request.node, doctest_plugin.DoctestItem):
+        # Get the fixture dynamically by its name.
+        tmp_path: Path = request.getfixturevalue("tmp_path")
+        # Chdir only for the duration of the test.
+        og_dir = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            yield
+        finally:
+            os.chdir(og_dir)
+    else:
+        # For normal tests, we have to yield, since this is a yield-fixture.
+        yield
