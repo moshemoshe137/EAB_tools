@@ -1,0 +1,17 @@
+codecov:
+  notify:
+    # https://github.com/pandas-dev/pandas/pull/40394#discussion_r593796630
+    after_n_builds: 5
+comment: false
+
+coverage:
+  status:
+    project:
+      default:
+        # If true is specified the resulting status will pass no matter what the coverage is or what other settings are specified.
+        informational: true
+    patch:
+      default:
+        informational: true
+
+github_checks: false

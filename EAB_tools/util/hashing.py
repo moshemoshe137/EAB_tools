@@ -8,6 +8,7 @@ from typing import (
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pandas.io.formats.style
 
 from EAB_tools.eab_rc import eab_rc
 

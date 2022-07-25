@@ -23,7 +23,10 @@ from EAB_tools.io.filenames import (
     sanitize_filename,
     sanitize_xl_sheetname,
 )
-from EAB_tools.util.hashing import hash_df
+from EAB_tools.util.hashing import (
+    hash_df,
+    hash_mpl_fig,
+)
 
 PathLike = Union[str, os.PathLike, Path]
 
@@ -548,3 +551,71 @@ def display_and_save_df(
     display(styler)
 
     return styler
+
+
+def display_and_save_fig(
+    fig: Union[plt.Figure, plt.Axes],
+    filename: Optional[str] = None,
+    save_image: bool = False,
+) -> None:
+    """
+    Display and save a `matplotlib` figure.
+
+    Displays and saves and `matplotlib` `Figure` or `Axes` with the default `matplotlib`
+    backend and optionally saves the image to disk as a png.
+
+    Parameters
+    ----------
+    fig : `plt.Figure` or `plt.Axes`
+        The `matplotlib` object to display and save.
+    filename : str, optional
+        The filename to use if saving as an image.
+    save_image : bool, default False
+        If True, save the `matplotlib` plot to disk.
+
+    See Also
+    --------
+    display_and_save_df : Display and save a pandas DataFrame or Styler object.
+
+    Examples
+    --------
+    >>> X = np.linspace(0, 2 * np.pi, 10 ** 6)
+    >>> y = np.tan(X)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(X, y, "b-")
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> display_and_save_fig(fig, "output image.png", save_image=True)
+    Saving as output image.png ...
+    >>> display_and_save_fig(ax, "output another image", save_image=True)
+    Saving as output another image.png ...
+    """
+    plt.show(block=False)
+
+    if not save_image:
+        # If we're not saving the image, then this is the end of the function.
+        return
+
+    # If they passed an `Axes` object, get the `Figure`
+    if isinstance(fig, plt.Axes):
+        fig = fig.get_figure()
+    fig.canvas.draw()
+
+    # Attempt to infer the filename if it is None
+    if filename is None:
+        if fig._suptitle is not None:
+            filename = fig._suptitle.get_text()
+        elif fig.axes[0].title.get_text() != "":
+            filename = fig.axes[0].title.get_text()
+        else:
+            filename = hash_mpl_fig(fig)
+    filename = sanitize_filename(filename)
+
+    # Needed to make `mypy` happy
+    filename = str(filename)
+    if filename[-4:] != ".png":
+        filename = filename + ".png"
+
+    filepath = Path(filename)
+
+    print(f"Saving as {filepath} ... ", end="")
+    fig.savefig(filepath)
