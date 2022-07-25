@@ -631,8 +631,22 @@ class TestDisplayAndSaveFig:
         name = sanitize_filename(str(fig))
         fig.suptitle(name)
 
-        display_and_save_fig(fig, save_image=True)
-        tm._minimize_tkagg()
+        display_and_save_fig(mpl_figs_and_axes, save_image=True)
+        assert Path(f"{name}.png").exists()
+
+    def test_infer_filename_from_axis(
+        self, save_image: bool, mpl_figs_and_axes: Union[plt.Figure, plt.Axes]
+    ) -> None:
+        if isinstance(mpl_figs_and_axes, plt.Figure):
+            axes: plt.Axes = mpl_figs_and_axes.axes[0]
+        else:
+            axes = mpl_figs_and_axes
+
+        # Pretty random name
+        name = sanitize_filename(str(mpl_figs_and_axes))
+        axes.set_title(name)
+
+        display_and_save_fig(mpl_figs_and_axes, save_image=True)
         assert Path(f"{name}.png").exists()
 
     def test_filename_from_hash(
