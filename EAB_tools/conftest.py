@@ -12,13 +12,14 @@ from typing import (
     Union,
 )
 
-from _pytest.fixtures import SubRequest as PytestFixtureRequest
 import dateutil.tz
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
+
+from EAB_tools._testing.types import PytestFixtureRequest
 
 Numeric = np.number[Any]
 
