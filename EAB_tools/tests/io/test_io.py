@@ -51,23 +51,48 @@ def all_mixups(file_extension: str) -> list[str]:
 
 @pytest.mark.parametrize("cache", [True, False], ids="cache={}".format)
 class TestLoadDf:
-    iris_csv = Path(__file__).parent / "data" / "iris.csv"
+    data_dir = Path(__file__).parent / "data"
+    iris_csv = data_dir / "iris.csv"
+    iris_xlsx = data_dir / "iris.xlsx"
+    files = [
+        iris_csv,
+        iris_xlsx,
+    ]
 
-    def test_doesnt_fail(self, cache: bool) -> None:
-        load_df(self.iris_csv, cache=cache)
+    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    def test_doesnt_fail(self, cache: bool, file: PathLike) -> None:
+        load_df(file, cache=cache)
 
-    def test_load_iris(self, iris: pd.DataFrame, cache: bool) -> None:
-        df = load_df(self.iris_csv, cache=cache)
+    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    def test_load_iris(self, file: PathLike, iris: pd.DataFrame, cache: bool) -> None:
+        df = load_df(file, cache=cache)
 
         assert (df == iris).all(axis=None)
 
-    @pytest.mark.parametrize("file_type_specification", all_mixups("CSV"))
-    def test_specify_file_type_csv(
-        self, file_type_specification: str, iris: pd.DataFrame, cache: bool
+    # @pytest.mark.parametrize(
+    #     "file,file_type_specification",
+    #     [(file, all_mixups(file.suffix)) for file in files],
+    #     ids=lambda p: p.name if isinstance(p, Path) else p
+    # )
+    @pytest.mark.parametrize(
+        "file,file_type_specification",
+        [
+            (file, suffix_specification)
+            for file in files
+            for suffix_specification in all_mixups(file.suffix)
+        ],
+        ids=str,
+    )
+    def test_specify_file_type(
+        self,
+        file: PathLike,
+        file_type_specification: str,
+        iris: pd.DataFrame,
+        cache: bool,
     ) -> None:
         # Make a copy of the csv with a weird extension
-        weird_file = Path(str(self.iris_csv) + ".foo")
-        shutil.copy(self.iris_csv, weird_file)
+        weird_file = Path(str(file) + ".foo")
+        shutil.copy(file, weird_file)
 
         df = load_df(weird_file, file_type=file_type_specification, cache=cache)
         assert (df == iris).all(axis=None)
@@ -75,6 +100,7 @@ class TestLoadDf:
         # Clean up
         weird_file.unlink()
 
+    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
     @pytest.mark.parametrize(
         "pkl_name",
         [
@@ -87,7 +113,7 @@ class TestLoadDf:
             Path("test_path.bz2"),
         ],
     )
-    def test_pickle_name(self, cache: bool, pkl_name: PathLike) -> None:
+    def test_pickle_name(self, file: PathLike, cache: bool, pkl_name: PathLike) -> None:
         file = self.iris_csv
         load_df(
             file,
