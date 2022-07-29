@@ -136,3 +136,24 @@ class TestLoadDf:
 
         with context:
             load_df(file, cache=cache, sheet_name=sn)
+
+    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("bad_file_type", [".db", "gsheets", "exe", ".PY"])
+    def test_bad_filetype(
+        self, file: tm.PathLike, cache: bool, bad_file_type: str
+    ) -> None:
+        msg = "Could not parse file of type"
+        with pytest.raises(ValueError, match=msg):
+            load_df(file, cache=cache, file_type=bad_file_type)
+
+    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    def test_wrong_filetype(self, file: tm.PathLike, cache: bool) -> None:
+        file = Path(file)
+        my_file_type = file.suffix.casefold().replace(".", "")
+        wrong_file_types = [
+            suffix for suffix in ["csv", "xls", "xlsx"] if suffix not in my_file_type
+        ]
+
+        for wrong_file_type in wrong_file_types:
+            with pytest.raises(Exception):
+                load_df(file, cache=cache, file_type=wrong_file_type)
