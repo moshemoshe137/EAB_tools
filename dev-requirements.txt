@@ -6,6 +6,7 @@ pytest-random-order
 
 # Additional functionality
 openpyxl
+xlrd
 
 # Code checks
 black == 22.3.0
