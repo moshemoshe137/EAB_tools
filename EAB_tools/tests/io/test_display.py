@@ -1,5 +1,4 @@
 # pylint: disable=C0114, C0116
-from contextlib import nullcontext as does_not_raise
 import itertools
 import os
 from pathlib import Path
@@ -151,7 +150,7 @@ class TestDisplayAndSaveDf:
         if pd.api.types.is_string_dtype(col):
             context: ContextManager[Optional[object]] = pytest.raises(ValueError)
         else:
-            context = does_not_raise()
+            context = tm.does_not_raise()
         with context:
             # str columns with incorrect format code should
             # throw a ValueError
@@ -337,7 +336,7 @@ class TestDisplayAndSaveDf:
                 ValueError, match="could not convert string to float"
             )
         else:
-            context = does_not_raise()
+            context = tm.does_not_raise()
 
         with context:
             styler = display_and_save_df(

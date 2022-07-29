@@ -1,6 +1,9 @@
 from pathlib import Path
 import shutil
-from typing import Iterator
+from typing import (
+    ContextManager,
+    Iterator,
+)
 
 import pandas as pd
 import pytest
@@ -119,3 +122,17 @@ class TestLoadDf:
             pkl_name = f"{pkl_name}.pkl.xz"
 
         assert (Path(file).parent / ".eab_tools_cache" / pkl_name).exists()
+
+    @pytest.mark.parametrize("sn", ["spam", "eggs", "spam&eggs", "iris", None])
+    def test_multiple_excel_sheets(self, cache: bool, sn: str) -> None:
+        file = self.data_dir / "multiple_sheets.xlsx"
+
+        # `sheet_name = None` behavior is not yet defined and right now is expected
+        # to just raise an exception
+        context = tm.does_not_raise() if sn else pytest.raises(Exception)
+
+        # Needed to make mypy happy
+        assert isinstance(context, ContextManager)
+
+        with context:
+            load_df(file, cache=cache, sheet_name=sn)
