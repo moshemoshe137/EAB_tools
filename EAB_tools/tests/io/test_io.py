@@ -5,6 +5,7 @@ from typing import (
     Iterator,
 )
 
+from _pytest.capture import CaptureFixture
 import pandas as pd
 import pytest
 
@@ -42,7 +43,7 @@ def all_mixups(file_extension: str) -> list[str]:
 
     Examples
     --------
-    >>> all_mixups("csv")
+    # >>> all_mixups("csv")
     ['CSV', 'csv', '.CSV', '.csv']
     """
     if file_extension.startswith("."):
@@ -157,3 +158,20 @@ class TestLoadDf:
         for wrong_file_type in wrong_file_types:
             with pytest.raises(Exception):
                 load_df(file, cache=cache, file_type=wrong_file_type)
+
+    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    def test_load_df_cache(
+        self, file: tm.PathLike, cache: bool, capsys: CaptureFixture[str]
+    ) -> None:
+        file = Path(file)  # Make mypy happy
+
+        # Make sure one read comes from the file
+        df = load_df(file, cache=True)
+        assert "Attempting to load the file from disk..." in capsys.readouterr().out
+
+        # Make sure the other read comes from the pickle
+        df_cached = load_df(file, cache=True)
+        assert "Loading from pickle..." in capsys.readouterr().out
+
+        # They better be equal!
+        assert (df == df_cached).all(axis=None)
