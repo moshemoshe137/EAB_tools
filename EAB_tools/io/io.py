@@ -6,7 +6,6 @@ from typing import (
 )
 
 import pandas as pd
-from pandas.errors import ParserError
 
 from .display import PathLike
 
@@ -66,8 +65,6 @@ def load_df(
         elif file_type_cf == "xlsx":
             engine = kwargs.pop("engine", "openpyxl")
             df = pd.read_excel(filepath, engine=engine, **kwargs)
-        else:
-            raise ParserError(f"Incorrect filetype {file_type_cf}")
 
     # Convert to `pandas` datatypes
     df = df.convert_dtypes(convert_boolean=False)
