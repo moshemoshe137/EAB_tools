@@ -1,6 +1,7 @@
 import itertools
 import os
 from pathlib import Path
+import shutil
 from typing import (
     Any,
     Callable,
@@ -23,6 +24,12 @@ from EAB_tools._testing.types import PytestFixtureRequest
 Numeric = np.number[Any]
 
 iris_df: pd.DataFrame = pd.read_csv(Path(__file__).parent / "tests/io/data/iris.csv")
+
+
+@pytest.fixture
+def iris_path() -> Path:
+    """pathlib Path object of absolute path to iris CSV file."""
+    return (Path(__file__).parent / "tests/io/data/iris.csv").resolve()
 
 
 @pytest.fixture
@@ -227,7 +234,29 @@ def datetime_and_float_df(datetime_df: pd.DataFrame) -> pd.DataFrame:
 
 
 @pytest.fixture(autouse=True)
+def _test_cache_cleanup() -> Iterator[None]:
+    """
+    Autouse fixture to remove EAB_tools/tests/io/data/.eab_tools_cache directory
+    after each test.
+    """
+    # Before the test
+    cache_path = Path(__file__).parent / "tests" / "io" / "data" / ".eab_tools_cache"
+    cache_path.mkdir(exist_ok=True)
+    pass
+
+    # yield
+    yield
+
+    # After the test
+    shutil.rmtree(cache_path)
+
+
+@pytest.fixture(autouse=True)
 def _docstring_tmp_path(request: PytestFixtureRequest) -> Iterator[None]:
+    """
+    Autouse  fixture to chdir to a tmp_path for all doctests without needing to
+    explicitly call it.
+    """
     # Almost completely adapted from a kind soul at https://stackoverflow.com/a/46991331
     # Trigger ONLY for the doctests.
     doctest_plugin = request.config.pluginmanager.getplugin("doctest")

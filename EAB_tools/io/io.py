@@ -17,7 +17,66 @@ def load_df(
     pkl_name: Optional[PathLike] = None,
     **kwargs: Any,
 ) -> pd.DataFrame:
-    """Load a CSV or Excel file as a pandas DataFrame."""
+    """
+    Load a CSV or Excel file as a pandas DataFrame.
+
+    Load a datafile ('csv', 'xls', or 'xlsx' file) as a pandas DataFrame. By default,
+    cache the datafile for quicker load time next time.
+
+    Parameters
+    ----------
+    filepath : PathLike
+        The path to the datafile
+    file_type : {'CSV', 'XLS', 'XLSX', 'detect'}, default 'detect'
+        If 'detect', attempt to detect the correct pandas function to read the file
+        based on its suffixes. Otherwise, the file type may be manually specified as
+        one of {'CSV', 'XLS', 'XLSX'}. The parameter is case-insensitive and may begin
+        with a dot.
+    cache : bool, default True
+        If True and the pickle file exists, the function will load directly from the
+        cached pickle object.
+        If True and the pickle file does not exist, the function will load the CSV from
+        disk and then save a pickle in the .eab_tools_cache dir with xz compression.
+        If False, pickle objects will not be written or read.
+
+    pkl_name : PathLike, Optional
+        The filename to use for the cached pickle object if it should not inherit from
+        the underlying datafile filename.
+
+    kwargs
+        Keyword arguments to be passed to `pandas.read_csv` or `pandas.read_excel`,
+        depending on the datafile's filetype.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The datafile as a pandas DataFrame object.
+
+    Examples
+    --------
+    >>> iris_filepath = getfixture("iris_path")
+    >>> df = load_df(iris_filepath)
+    Attempting to load the file from disk...
+    >>> df
+         SepalLength  SepalWidth  PetalLength  PetalWidth            Name
+    0            5.1         3.5          1.4         0.2     Iris-setosa
+    1            4.9         3.0          1.4         0.2     Iris-setosa
+    2            4.7         3.2          1.3         0.2     Iris-setosa
+    3            4.6         3.1          1.5         0.2     Iris-setosa
+    4            5.0         3.6          1.4         0.2     Iris-setosa
+    ..           ...         ...          ...         ...             ...
+    145          6.7         3.0          5.2         2.3  Iris-virginica
+    146          6.3         2.5          5.0         1.9  Iris-virginica
+    147          6.5         3.0          5.2         2.0  Iris-virginica
+    148          6.2         3.4          5.4         2.3  Iris-virginica
+    149          5.9         3.0          5.1         1.8  Iris-virginica
+    <BLANKLINE>
+    [150 rows x 5 columns]
+    >>> df_again = load_df(iris_filepath)
+    Loading from pickle...
+    >>> (df == df_again).all(axis=None)
+    True
+    """
     CSV, XLS, XLSX = "csv", "xls", "xlsx"
     FILE_TYPES = pd.Series([CSV, XLS, XLSX])
     # Make sure it's a Path object
