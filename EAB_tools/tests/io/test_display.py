@@ -34,6 +34,7 @@ except ImportError:
 
 @pytest.fixture(autouse=True)
 def _init(tmp_path: Path) -> None:
+    """Autouse fixture to chdir to tmp_path for all tests in this file."""
     os.chdir(tmp_path)
 
 

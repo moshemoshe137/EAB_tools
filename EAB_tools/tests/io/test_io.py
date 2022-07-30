@@ -1,9 +1,6 @@
 from pathlib import Path
 import shutil
-from typing import (
-    ContextManager,
-    Iterator,
-)
+from typing import ContextManager
 
 from _pytest.capture import CaptureFixture
 import pandas as pd
@@ -11,20 +8,6 @@ import pytest
 
 from EAB_tools import load_df
 import EAB_tools._testing as tm
-
-
-@pytest.fixture(autouse=True)
-def _test_cache_cleanup() -> Iterator[None]:
-    # Before the test
-    cache_path = Path(__file__).parent / "data" / ".eab_tools_cache"
-    cache_path.mkdir(exist_ok=True)
-    pass
-
-    # yield
-    yield
-
-    # After the test
-    shutil.rmtree(cache_path)
 
 
 def all_mixups(file_extension: str) -> list[str]:
