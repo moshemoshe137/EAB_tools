@@ -13,7 +13,7 @@ defaults:
     shell: pwsh
 
 jobs:
-  build:
+  pre-commit-tests:
     runs-on: ${{matrix.os}}
     strategy:
       fail-fast: false
