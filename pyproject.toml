@@ -4,27 +4,32 @@ requires = ["setuptools"]
 
 [project]
 name = "EAB_tools"
-version = "0.0.1.2"
 authors = [
     { name = "Moshe Rubin", email = "mosherubin137@gmail.com" }
 ]
-description = "Tools for analyzing data exported from the EAB Navigate Student Success Management Software."
+description = """Tools for analyzing data exported from the EAB Navigate Student \
+                 Success Management Software."""
 readme = "README.md"
-license = { file="LICENSE" }
+license = { file = "LICENSE" }
 requires-python = ">=3.9"
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 1 - Planning",
+    "Framework :: Jupyter",
+    "Intended Audience :: Education",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Topic :: Database",
 ]
-dynamic = ['dependencies']  # Defined in setup.py
+dynamic = ["version", "dependencies"]  # Defined in setup.py
 
 [project.urls]
 "Homepage" = "https://github.com/moshemoshe137/EAB_tools"
 "Bug Tracker" = "https://github.com/moshemoshe137/EAB_tools/issues"
 
 [tool.black]
-target-version = ['py39', 'py310']
+target-version = ["py39", "py310"]
 
 [tool.isort]
 # Most settings are barrowed from pandas

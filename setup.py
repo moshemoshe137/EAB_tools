@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="EAB_tools",
-    version="0.0.1.2",
+    version="0.0.2_rc",
     author="Moshe Rubin",
     author_email="mosherubin137@gmail.com",
     description="Tools for data exported from EAB",
