@@ -9,7 +9,6 @@ on:
 jobs:
   PyPI:
     runs-on: ubuntu-latest
-    needs: pytest-tests
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
