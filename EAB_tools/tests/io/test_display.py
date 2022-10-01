@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0116
+from collections.abc import Sequence
 from contextlib import nullcontext as does_not_raise
 import itertools
 import os
@@ -8,7 +9,6 @@ from typing import (
     Any,
     ContextManager,
     Optional,
-    Sequence,
     Union,
 )
 

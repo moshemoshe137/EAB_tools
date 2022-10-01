@@ -1,11 +1,13 @@
+from collections.abc import (
+    Iterable,
+    Iterator,
+)
 import itertools
 import os
 from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Iterable,
-    Iterator,
     Literal,
     Union,
 )
