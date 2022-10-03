@@ -111,3 +111,8 @@ repos:
           - pyupgrade==2.38.2
         args:
           - --py39-plus  # Synchronize with args in regular hook
+  - repo: https://github.com/python-jsonschema/check-jsonschema.git
+    rev: 0.18.3
+    hooks:
+      - id: check-github-actions
+      - id: check-github-workflows
