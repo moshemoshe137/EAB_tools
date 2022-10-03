@@ -29,16 +29,16 @@ repos:
       - id: trailing-whitespace  # Trims trailing whitespace.
 
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 22.8.0
     hooks:
-      - id: black
+      - id: black-jupyter
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+    rev: 5.0.4
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-bugbear==22.6.22
+          - flake8-bugbear==22.9.23
           - flake8-comprehensions==3.10.0
 
   - repo: https://github.com/PyCQA/isort
@@ -58,7 +58,7 @@ repos:
           - python
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.34.0
+    rev: v2.38.2
     hooks:
       - id: pyupgrade
         args:
@@ -73,3 +73,41 @@ repos:
         # Don't let `pre-commit` pass filenames
         # Instead, use `pydocstyle`'s default settings from pyproject.toml
         pass_filenames: false
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.6.1
+    hooks:
+      - id: nbstripout
+        args: ['--extra-keys=cell.metadata.pycharm']
+        stages:
+          - manual
+      - id: nbstripout
+        name: nbstripout pycharm metadata
+        alias: nbstripout-pycharm
+        args:
+          - '--extra-keys=cell.metadata.pycharm'
+          - --keep-output
+          - --keep-count
+
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.5.2
+    hooks:
+      - id: nbqa-check-ast
+      - id: nbqa-flake8
+        additional_dependencies:
+          - flake8==5.0.4
+          - flake8-bugbear==22.9.23
+          - flake8-comprehensions==3.10.0
+        args:
+          - '--extend-ignore=E402'  # module level import not at top of file
+      - id: nbqa-isort
+        additional_dependencies:
+          - isort==5.10.1
+      - id: nbqa-mypy
+        additional_dependencies:
+          - mypy==0.981
+      - id: nbqa-pyupgrade
+        additional_dependencies:
+          - pyupgrade==2.38.2
+        args:
+          - --py39-plus  # Synchronize with args in regular hook

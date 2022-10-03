@@ -2,7 +2,7 @@
 
 import pytest
 
-from EAB_tools.io.filenames import (
+from EAB_tools import (
     sanitize_filename,
     sanitize_xl_sheetname,
 )

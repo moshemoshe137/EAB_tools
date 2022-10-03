@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0116
+from collections.abc import Sequence
 from contextlib import nullcontext as does_not_raise
 import itertools
 import os
@@ -8,14 +9,20 @@ from typing import (
     Any,
     ContextManager,
     Optional,
-    Sequence,
     Union,
 )
 
+from matplotlib import pyplot as plt
 import pandas as pd
 import pytest
 
-from EAB_tools.io.io import display_and_save_df
+import EAB_tools as eab
+from EAB_tools import (
+    display_and_save_df,
+    display_and_save_fig,
+    sanitize_filename,
+)
+import EAB_tools._testing as tm
 
 try:
     import openpyxl as _openpyxl  # noqa: F401 # 'openpyxl ... imported but unused
@@ -25,27 +32,28 @@ except ImportError:
     _HAS_OPENPYXL = False
 
 
+@pytest.fixture(autouse=True)
+def _init(tmp_path: Path) -> None:
+    os.chdir(tmp_path)
+
+
+SaveImageTrueParam = pytest.param(True, marks=pytest.mark.slow)
+SaveExcelTrueParam = pytest.param(
+    True, marks=pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl required")
+)
+
+
 @pytest.mark.parametrize(
     "save_image",
-    [pytest.param(True, marks=pytest.mark.slow), False],
+    [SaveImageTrueParam, False],
     ids="save_image={}".format,
 )
 @pytest.mark.parametrize(
     "save_excel",
-    [
-        pytest.param(
-            True,
-            marks=pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl required"),
-        ),
-        False,
-    ],
+    [SaveExcelTrueParam, False],
     ids="save_excel={}".format,
 )
-class TestDisplayAndSave:
-    @pytest.fixture(autouse=True)
-    def _init(self, tmp_path: Path) -> None:
-        os.chdir(tmp_path)
-
+class TestDisplayAndSaveDf:
     def test_doesnt_fail(
         self, iris: pd.DataFrame, save_image: bool, save_excel: bool
     ) -> None:
@@ -566,3 +574,87 @@ class TestDisplayAndSave:
 
     # TODO: tests of additional *_kwargs. Should somehow parameterize all the tests
     #  above, if possible...
+
+
+@pytest.mark.flaky(rerun_filter=tm._is_tkinter_error, max_runs=5)
+@pytest.mark.parametrize("save_image", [True, False], ids="save_image={}".format)
+class TestDisplayAndSaveFig:
+    def display_and_save_fig(self, *args: Any, **kwargs: Any) -> None:
+        from EAB_tools.io.display import display_and_save_fig as display_and_save_fig_og
+
+        display_and_save_fig_og(*args, **kwargs)
+        tm._minimize_tkagg()
+
+    def test_doesnt_fail(
+        self, mpl_figs_and_axes: Union[plt.Figure, plt.Axes], save_image: bool
+    ) -> None:
+        display_and_save_fig(mpl_figs_and_axes, save_image=save_image)
+
+    def test_expected_output(
+        self,
+        save_image: bool,
+        iris: pd.DataFrame,
+        tmp_path: Path,
+    ) -> None:
+        fig, ax = plt.subplots(
+            subplot_kw={
+                "xlabel": "SepalLength",
+                "ylabel": "SepalWidth",
+                "title": self.test_expected_output.__name__,
+            },
+            facecolor="white",
+        )
+
+        for iris_type in iris["Name"].unique():
+            subset: pd.DataFrame = iris[iris["Name"] == iris_type]
+            ax.plot("SepalLength", "SepalWidth", "o", data=subset, label=iris_type)
+        ax.legend()
+
+        display_and_save_fig(fig, save_image=True, filename="foo.png")
+        assert tm._test_photos_are_equal(
+            tmp_path / "foo.png",
+            Path(__file__).parent / "data" / "test_expected_output.png",
+        )
+        plt.close(fig)
+
+    def test_infer_filename_from_fig_suptitle(
+        self,
+        save_image: bool,
+        mpl_figs_and_axes: Union[plt.Figure, plt.Axes],
+    ) -> None:
+        fig: plt.Figure
+        if isinstance(mpl_figs_and_axes, plt.Axes):
+            fig = mpl_figs_and_axes.get_figure()
+        else:
+            fig = mpl_figs_and_axes
+
+        name = sanitize_filename(str(fig))
+        fig.suptitle(name)
+
+        display_and_save_fig(mpl_figs_and_axes, save_image=True)
+        assert Path(f"{name}.png").exists()
+
+    def test_infer_filename_from_axis(
+        self, save_image: bool, mpl_figs_and_axes: Union[plt.Figure, plt.Axes]
+    ) -> None:
+        if isinstance(mpl_figs_and_axes, plt.Figure):
+            axes: plt.Axes = mpl_figs_and_axes.axes[0]
+        else:
+            axes = mpl_figs_and_axes
+
+        # Pretty random name
+        name = sanitize_filename(str(mpl_figs_and_axes))
+        axes.set_title(name)
+
+        display_and_save_fig(mpl_figs_and_axes, save_image=True)
+        assert Path(f"{name}.png").exists()
+
+    def test_filename_from_hash(
+        self,
+        save_image: bool,
+        mpl_figs_and_axes: Union[plt.Figure, plt.Axes],
+    ) -> None:
+        expected_hash = eab.util.hash_mpl_fig(mpl_figs_and_axes)
+        display_and_save_fig(mpl_figs_and_axes, save_image=True)
+
+        assert Path(f"{expected_hash}.png").exists()
