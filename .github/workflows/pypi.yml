@@ -4,7 +4,7 @@ name: Publish to PyPI
 
 on:
   workflow_run:
-    workflows: ["Pytest Tests - All OSes - Python 3.9, 3.10"]
+    workflows: ["Quick Pytest Tests - All OSes - Python 3.9, 3.10"]
     types: [completed]
 jobs:
   PyPI:
