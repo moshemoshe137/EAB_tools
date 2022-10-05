@@ -25,6 +25,12 @@ jobs:
         python -m pip install -U flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: troubleshoot
+      run: |
+        echo github.ref
+        echo ${{ github.ref }}
+        echo startsWith(github.ref, 'refs/tags')
+        echo startsWith(${{ github.ref }}, 'refs/tags')
     - name: Publish Package
       if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1
