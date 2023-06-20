@@ -1,6 +1,5 @@
 """Methods to display and save DataFrames, plots."""
 from collections.abc import Sequence
-import os
 from pathlib import Path
 from typing import (
     Any,
@@ -20,6 +19,7 @@ from pandas.io.formats.style import (
 )
 
 from EAB_tools.io.filenames import (
+    PathLike,
     sanitize_filename,
     sanitize_xl_sheetname,
 )
@@ -27,8 +27,6 @@ from EAB_tools.util.hashing import (
     hash_df,
     hash_mpl_fig,
 )
-
-PathLike = Union[str, os.PathLike, Path]
 
 # Copied from Excel's conditional formatting Red-Yellow-Green built-in colormap.
 _xl_RYG_colors = ["#F8696B", "#FFEB84", "#63BE7B"]
@@ -41,7 +39,8 @@ xl_GYR_cmap = xl_RYG_cmap.reversed()
 def _to_excel(
     df: pd.DataFrame,
     styler: Styler,
-    filepath: Path,
+    excel_output: Path,
+    sheet_name: Optional[PathLike],
     percentage_format_subset: Optional[Union[Subset, str]],
     thousands_format_subset: Optional[Union[Subset, str]],
     bar_subset: Optional[Union[Subset, str]],
@@ -56,13 +55,13 @@ def _to_excel(
     except ImportError as e:
         raise ImportError("openpyxl is required for Excel functionality") from e
 
-    excel_output = filepath.parent / "output.xlsx"
     # Determine ExcelWriter params based on if the file exists or not
     mode, if_sheet_exists = ("a", "replace") if excel_output.exists() else ("w", None)
 
     # Determine an Excel sheet name:
-    sn = filepath.name.replace(".png", "")
-    sn = sanitize_xl_sheetname(sn)
+    if sheet_name is None:
+        sheet_name = excel_output.name.replace(".png", "").replace(".xlsx", "")
+    sheet_name = sanitize_xl_sheetname(sheet_name)
 
     # Excel does NOT support datetimes with timezones
     for col in df.select_dtypes(["datetime", "datetimetz"]).columns:
@@ -76,10 +75,10 @@ def _to_excel(
     ) as wb:
         print(
             f"Exporting to Excel as '{excel_output.resolve().parent}\\"
-            f"[{excel_output.name}]{sn}'",
+            f"[{excel_output.name}]{sheet_name}'",
             end=" ... ",
         )
-        styler.to_excel(wb, sheet_name=sn, engine="openpyxl")
+        styler.to_excel(wb, sheet_name=sheet_name, engine="openpyxl")
 
         if (
             percentage_format_subset is not None
@@ -102,7 +101,7 @@ def _to_excel(
             len_index = df.index.nlevels
 
             # Get the worksheet
-            ws: openpyxl.workbook.workbook.Worksheet = wb.book[sn]
+            ws: openpyxl.workbook.workbook.Worksheet = wb.book[sheet_name]
 
             # Determine the 0-based pd indices for number formatting
             pcnt_cols = (
@@ -192,6 +191,7 @@ def display_and_save_df(
     background_gradient_kwargs: Optional[Sequence[dict[str, Any]]] = None,
     bar_kwargs: Optional[Sequence[dict[str, Any]]] = None,
     save_excel: bool = False,
+    excel_path: PathLike = "output.xlsx",
     save_image: bool = False,
     min_width: str = "10em",
     max_width: str = "25em",
@@ -537,7 +537,8 @@ def display_and_save_df(
         _to_excel(
             df=df,
             styler=styler,
-            filepath=filename,
+            excel_output=Path(excel_path),
+            sheet_name=filename,
             percentage_format_subset=percentage_format_subset,
             thousands_format_subset=thousands_format_subset,
             bar_subset=bar_subset,
