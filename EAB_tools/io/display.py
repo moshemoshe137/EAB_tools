@@ -61,6 +61,8 @@ def _to_excel(
     # Determine an Excel sheet name:
     if sheet_name is None:
         sheet_name = excel_output.name.replace(".png", "").replace(".xlsx", "")
+    sheet_name = Path(sheet_name)
+    sheet_name = sheet_name.name.replace(".df.png", "").replace(".png", "")
     sheet_name = sanitize_xl_sheetname(sheet_name)
 
     # Excel does NOT support datetimes with timezones
@@ -101,6 +103,11 @@ def _to_excel(
             len_index = df.index.nlevels
 
             # Get the worksheet
+            sheet_name = next(
+                sheet
+                for sheet in wb.book.sheetnames
+                if sheet.casefold() == sheet_name.casefold()
+            )
             ws: openpyxl.workbook.workbook.Worksheet = wb.book[sheet_name]
 
             # Determine the 0-based pd indices for number formatting
@@ -109,16 +116,31 @@ def _to_excel(
                 if percentage_format_subset is not None
                 else []
             )
+            try:
+                # Check if we have a list containing a list
+                iter(pcnt_cols[0])
+                pcnt_cols = pcnt_cols[0]
+            except (TypeError, IndexError):
+                # We just have a normal list
+                pass
             tsnd_cols = (
                 [df.columns.get_loc(col) for col in thousands_format_subset]
                 if thousands_format_subset is not None
                 else []
             )
-            bar_cols = (
-                [df.columns.get_loc(col) for col in bar_subset]
-                if bar_subset is not None
-                else []
-            )
+            try:
+                if isinstance(bar_subset, tuple):
+                    # If `bar_subset` is a tuple, then it's
+                    # (rows, cols)
+                    bar_subset = bar_subset[1]
+                bar_cols = (
+                    [df.columns.get_loc(col) for col in bar_subset]
+                    if bar_subset is not None
+                    else []
+                )
+            except BaseException:
+                # So much could go wrong here with complicated subsets on a multiindex
+                bar_cols = []
 
             # Iterate through the columns, applying styles to all
             # cells in a column
