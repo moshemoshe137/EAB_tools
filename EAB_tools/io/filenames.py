@@ -1,9 +1,14 @@
 """Utilities for dealing with filenames and Excel sheet names."""
 
+import os
+from pathlib import Path
 import re
+from typing import Union
+
+PathLike = Union[str, os.PathLike[str], Path]
 
 
-def sanitize_filename(filename: str) -> str:
+def sanitize_filename(filename: PathLike) -> str:
     """
     Ensure valid filenames.
 
@@ -36,10 +41,11 @@ def sanitize_filename(filename: str) -> str:
     >>> sanitize_filename('python is fun 🐍.py')
     'python is fun _.py'
     """
+    filename = str(filename)
     return re.sub(r"[^\w\-_. ()]", "_", filename)
 
 
-def sanitize_xl_sheetname(sheetname: str) -> str:
+def sanitize_xl_sheetname(sheetname: PathLike) -> str:
     """
     Ensure valid Excel sheetnames.
 
@@ -67,6 +73,7 @@ def sanitize_xl_sheetname(sheetname: str) -> str:
     >>> sanitize_xl_sheetname("'single quoted'")
     '_single quoted_'
     """
+    sheetname = str(sheetname)
     # A worksheet cannot be named history, regardless of case
     # A worksheet name cannot be left blank
     if sheetname == "" or sheetname.lower() == "history":
