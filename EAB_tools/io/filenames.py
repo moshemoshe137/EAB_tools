@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 from typing import Union
 
-PathLike = Union[str, os.PathLike, Path]
+PathLike = Union[str, os.PathLike[str], Path]
 
 
 def sanitize_filename(filename: PathLike) -> str:
