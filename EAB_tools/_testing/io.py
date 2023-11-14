@@ -1,6 +1,7 @@
 import tkinter
 from types import TracebackType
 
+from matplotlib.backends.backend_tkagg import FigureManagerTk
 import matplotlib.pyplot as plt
 
 from EAB_tools._testing.types import PathLike
@@ -22,4 +23,6 @@ def _minimize_tkagg() -> None:
     if plt.get_backend().casefold() == "tkagg":
         # Rapidly minimizes the window to prevent strobing effect.
         # Works on my Windows 10, at least...
-        plt.get_current_fig_manager().window.state("iconic")
+        fig_manager = plt.get_current_fig_manager()
+        assert isinstance(fig_manager, FigureManagerTk)
+        fig_manager.window.state("iconic")

@@ -3,8 +3,10 @@ import hashlib
 from typing import (
     Optional,
     Union,
+    cast,
 )
 
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -68,10 +70,12 @@ def hash_mpl_fig(
     usedforsecurity: bool = False,
 ) -> str:
     """Hash a matplotlib figure."""
-    if isinstance(fig, plt.Axes):
-        fig = fig.get_figure()
-    fig.canvas.draw()
-    buf = fig.canvas.buffer_rgba()
+    figure = fig.get_figure() if isinstance(fig, plt.Axes) else fig
+    assert figure is not None
+
+    canvas: FigureCanvasAgg = cast(FigureCanvasAgg, figure.canvas)
+    canvas.draw()
+    buf = canvas.buffer_rgba()
     X = np.asarray(buf).tobytes()
 
     h = hashlib.sha1(usedforsecurity=usedforsecurity)

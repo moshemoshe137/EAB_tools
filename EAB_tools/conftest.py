@@ -146,12 +146,14 @@ def mpl_plots(
 @pytest.fixture
 def mpl_axes(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Axes:
     """Returns a variety of `plt.Axes` objects"""
+    assert isinstance(mpl_plots["ax"], plt.Axes)  # for mypy
     return mpl_plots["ax"]
 
 
 @pytest.fixture
 def mpl_figs(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Figure:
     """Returns a variety of `plt.Figure` objects"""
+    assert isinstance(mpl_plots["fig"], plt.Figure)  # for mypy
     return mpl_plots["fig"]
 
 
