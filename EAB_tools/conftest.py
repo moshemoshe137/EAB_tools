@@ -181,7 +181,7 @@ strftime_codes = [
 
 @pytest.fixture(
     params=iter(strftime_codes),
-    ids=[f"{today:{strftime}}" for strftime in strftime_codes],
+    ids=strftime_codes,
 )  # noqa
 def strftime(request: PytestFixtureRequest) -> str:
     """Various different strftime format codes"""
