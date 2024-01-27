@@ -213,8 +213,8 @@ def datetime_df(request: PytestFixtureRequest) -> pd.DataFrame:
     df = pd.DataFrame(
         {
             "A": pd.date_range("2000-01-01", periods=10, freq="b"),
-            "B": pd.date_range("2000-01-01", periods=10, freq="w"),
-            "C": pd.date_range("2000-01-01", periods=10, freq="y"),
+            "B": pd.date_range("2000-01-01", periods=10, freq="W"),
+            "C": pd.date_range("2000-01-01", periods=10, freq="YE"),
         }
     )
     time_offset = request.param
