@@ -22,3 +22,7 @@ pydocstyle
 types-atomicwrites
 types-python-dateutil
 types-setuptools
+
+# Silence `pandas` DeprecationWarning
+# and maybe adds a performance boost too? Unclear
+pyarrow
