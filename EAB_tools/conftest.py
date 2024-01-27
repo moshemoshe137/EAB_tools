@@ -97,7 +97,7 @@ def multiindex(iris: pd.DataFrame, request: PytestFixtureRequest) -> pd.MultiInd
         pytest.param(
             lambda x: x**2, id="lambda squared"
         ),  # int -> int and float -> float
-        pytest.param(lambda arr: np.rint(arr).astype(int), id="rint"),  # any -> int
+        pytest.param(lambda arr: np.rint(arr).astype("int64"), id="rint"),  # any -> int
     ],
     name="func",
 )
