@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from pandas._testing import makeDateIndex
 import pytest
 
 Numeric = np.number[Any]
@@ -213,9 +212,9 @@ def datetime_df(request: PytestFixtureRequest) -> pd.DataFrame:
     9 2000-01-14 2000-03-05 2009-12-31"""
     df = pd.DataFrame(
         {
-            "A": makeDateIndex(freq="b"),
-            "B": makeDateIndex(freq="w"),
-            "C": makeDateIndex(freq="y"),
+            "A": pd.date_range("2000-01-01", periods=10, freq="b"),
+            "B": pd.date_range("2000-01-01", periods=10, freq="w"),
+            "C": pd.date_range("2000-01-01", periods=10, freq="y"),
         }
     )
     time_offset = request.param
