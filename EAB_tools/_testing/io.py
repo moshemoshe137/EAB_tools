@@ -15,8 +15,9 @@ def _is_tkinter_error(
 
 
 def _test_photos_are_equal(base: PathLike, other: PathLike) -> bool:
-    # https://stackoverflow.com/a/34669225
-    return open(base, "rb").read() == open(other, "rb").read()
+    # https://chat.openai.com/share/70244426-80d9-4668-b476-6bc36946cc6f
+    base, other = str(base), str(other)  # for mypy
+    return (plt.imread(base) == plt.imread(other)).all()
 
 
 def _minimize_tkagg() -> None:
