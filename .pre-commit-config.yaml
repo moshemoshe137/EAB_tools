@@ -91,7 +91,7 @@ repos:
           - --keep-count
 
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.6.0
+    rev: 1.7.1
     hooks:
       - id: nbqa-check-ast
       - id: nbqa-flake8
@@ -106,7 +106,9 @@ repos:
           - isort==5.12.0
       - id: nbqa-mypy
         additional_dependencies:
-          - mypy==0.991
+          - mypy==1.7.0
+          - matplotlib  # for its type hints
+        exclude: \.py$
       - id: nbqa-pyupgrade
         additional_dependencies:
           - pyupgrade==v3.3.1

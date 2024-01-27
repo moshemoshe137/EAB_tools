@@ -14,7 +14,7 @@ flake8
 flake8-bugbear
 flake8-comprehensions
 isort
-mypy
+mypy == 1.7.0
 pyupgrade
 pydocstyle
 
