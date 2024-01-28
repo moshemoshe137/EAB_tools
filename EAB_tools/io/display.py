@@ -9,7 +9,10 @@ from typing import (
 import warnings
 
 from IPython.display import display
-import dataframe_image as dfi  # noqa
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    import dataframe_image as dfi  # noqa
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
