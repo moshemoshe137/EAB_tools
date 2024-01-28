@@ -40,6 +40,7 @@ repos:
         additional_dependencies:
           - flake8-bugbear==24.1.17
           - flake8-comprehensions==3.14.0
+          - Flake8-pyproject==1.2.3
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.2
@@ -99,6 +100,7 @@ repos:
           - flake8==7.0.0
           - flake8-bugbear==24.1.17
           - flake8-comprehensions==3.14.0
+          - Flake8-pyproject==1.2.3
         args:
           - '--extend-ignore=E402'  # module level import not at top of file
       - id: nbqa-isort

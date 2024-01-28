@@ -31,6 +31,10 @@ dynamic = ["version", "dependencies"]  # Defined in setup.py
 [tool.black]
 target-version = ["py39", "py310", "py311"]
 
+[tool.flake8]
+count = true
+max-line-length = 88
+
 [tool.isort]
 # Most settings are barrowed from pandas
 # https://github.com/pandas-dev/pandas/blob/f4ca4d3d0ea6a907262f8c84/pyproject.toml#L143
