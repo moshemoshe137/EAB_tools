@@ -1,4 +1,5 @@
 """Utilities for hashing objects."""
+
 import hashlib
 from typing import (
     Optional,

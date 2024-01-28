@@ -1,4 +1,5 @@
 """Tests for hashing"""
+
 from typing import Any
 
 import matplotlib.pyplot as plt

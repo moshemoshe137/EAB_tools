@@ -1,4 +1,5 @@
 """Methods to display and save DataFrames, plots."""
+
 from collections.abc import Sequence
 from pathlib import Path
 from typing import (
