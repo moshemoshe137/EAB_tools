@@ -143,8 +143,10 @@ def _to_excel(
                     if bar_subset is not None
                     else []
                 )
-            except BaseException:
-                # So much could go wrong here with complicated subsets on a multiindex
+            except TypeError:
+                # `bar_subset`` contains more than just columns.
+                # For now, we must abort trying to export data bar conditional
+                # formatting.
                 bar_cols = []
 
             # Iterate through the columns, applying styles to all
