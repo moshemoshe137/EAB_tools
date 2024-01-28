@@ -1,4 +1,5 @@
 """Methods to load data from disk."""
+
 from pathlib import Path
 from typing import (
     Any,

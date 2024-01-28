@@ -138,8 +138,14 @@ class TestLoadDf:
             suffix for suffix in ["csv", "xls", "xlsx"] if suffix not in my_file_type
         ]
 
+        msg = r"""(?xi)
+        can't\ decode\ byte  # UnicodeDecodeError
+        | Excel\ file\ format\ cannot\ be\ determined  # ValueError
+        | no\ valid\ workbook  # OSError
+        | File\ is\ not\ a\ zip\ file  # zipfile.BadZipFile
+        """
         for wrong_file_type in wrong_file_types:
-            with pytest.raises(Exception):
+            with pytest.raises(Exception, match=msg):
                 load_df(file, cache=cache, file_type=wrong_file_type)
 
     @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)

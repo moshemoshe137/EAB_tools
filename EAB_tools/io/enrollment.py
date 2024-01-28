@@ -1,4 +1,5 @@
 """Load EAB enrollment reports."""
+
 from typing import Optional
 
 import pandas as pd
