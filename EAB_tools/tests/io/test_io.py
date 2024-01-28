@@ -131,6 +131,16 @@ class TestLoadDf:
             load_df(file, cache=cache, file_type=bad_file_type)
 
     @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("ambiguous_suffix", [".csv.xlsx", ".xlsx.csv"])
+    def test_ambiguous_filetype(
+        self, file: tm.PathLike, cache: bool, ambiguous_suffix: str
+    ) -> None:
+        file = Path(file)  # Make mypy happy
+        msg = r"Ambiguous suffix\(es\):"
+        with pytest.raises(ValueError, match=msg):
+            load_df(f"{file.name}{ambiguous_suffix}", cache=cache, file_type="detect")
+
+    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
     def test_wrong_filetype(self, file: tm.PathLike, cache: bool) -> None:
         file = Path(file)
         my_file_type = file.suffix.casefold().replace(".", "")

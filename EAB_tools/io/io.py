@@ -102,7 +102,7 @@ def load_df(
         if len(matches) == 1:
             file_type_cf = matches.iloc[0]
         else:
-            file_type_cf = "".join(filepath.suffixes)
+            raise ValueError(f"Ambiguous suffix(es): {suffixes}.")
     if file_type_cf not in FILE_TYPES.values:
         raise ValueError(f"Could not parse file of type {file_type_cf}")
 
