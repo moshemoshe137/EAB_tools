@@ -24,6 +24,12 @@ types-atomicwrites
 types-python-dateutil
 types-setuptools
 
+# Generate fake data
+faker
+
+# Work with Jupyter Notebooks
+notebook
+
 # Silence `pandas` DeprecationWarning
 # and maybe adds a performance boost too? Unclear
 pyarrow
