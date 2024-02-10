@@ -8,13 +8,14 @@ pytest-random-order
 openpyxl
 
 # Code checks
-black == 22.8.0
+black == 24.1.0
 pre-commit
 flake8
 flake8-bugbear
 flake8-comprehensions
+Flake8-pyproject
 isort
-mypy
+mypy == 1.7.0
 pyupgrade
 pydocstyle
 
@@ -22,3 +23,7 @@ pydocstyle
 types-atomicwrites
 types-python-dateutil
 types-setuptools
+
+# Silence `pandas` DeprecationWarning
+# and maybe adds a performance boost too? Unclear
+pyarrow

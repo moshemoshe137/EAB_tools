@@ -1,4 +1,5 @@
 """Methods to display and save DataFrames, plots."""
+
 from collections.abc import Sequence
 from pathlib import Path
 from typing import (
@@ -9,7 +10,11 @@ from typing import (
 import warnings
 
 from IPython.display import display
-import dataframe_image as dfi  # noqa
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    import dataframe_image as dfi  # noqa
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -30,7 +35,7 @@ from EAB_tools.util.hashing import (
 
 # Copied from Excel's conditional formatting Red-Yellow-Green built-in colormap.
 _xl_RYG_colors = ["#F8696B", "#FFEB84", "#63BE7B"]
-xl_RYG_cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
+xl_RYG_cmap = mpl.colors.LinearSegmentedColormap.from_list(
     "xl_RYG_cmap", _xl_RYG_colors
 )
 xl_GYR_cmap = xl_RYG_cmap.reversed()
@@ -138,8 +143,10 @@ def _to_excel(
                     if bar_subset is not None
                     else []
                 )
-            except BaseException:
-                # So much could go wrong here with complicated subsets on a multiindex
+            except TypeError:
+                # `bar_subset`` contains more than just columns.
+                # For now, we must abort trying to export data bar conditional
+                # formatting.
                 bar_cols = []
 
             # Iterate through the columns, applying styles to all
@@ -459,7 +466,7 @@ def display_and_save_df(
             percentage_format_subset = df.columns[percentage_format_subset_mask]
         except AttributeError as e:
             # Can only use .str accessor with Index, not MultiIndex
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
             percentage_format_subset = []
     # Apply the percentage format
     if percentage_format_subset is not None:
@@ -619,18 +626,17 @@ def display_and_save_fig(
         return
 
     # If they passed an `Axes` object, get the `Figure`
-    if isinstance(fig, plt.Axes):
-        fig = fig.get_figure()
-    fig.canvas.draw()
+    figure = fig.get_figure() if isinstance(fig, plt.Axes) else fig
+    assert figure is not None  # for `mypy`
 
     # Attempt to infer the filename if it is None
     if filename is None:
-        if fig._suptitle is not None:
-            filename = fig._suptitle.get_text()
-        elif fig.axes[0].title.get_text() != "":
-            filename = fig.axes[0].title.get_text()
+        if figure._suptitle is not None:  # type: ignore[attr-defined]
+            filename = figure._suptitle.get_text()  # type: ignore[attr-defined]
+        elif figure.axes[0].title.get_text() != "":
+            filename = figure.axes[0].title.get_text()
         else:
-            filename = hash_mpl_fig(fig)
+            filename = hash_mpl_fig(figure)
     filename = sanitize_filename(filename)
 
     # Needed to make `mypy` happy
@@ -641,4 +647,4 @@ def display_and_save_fig(
     filepath = Path(filename)
 
     print(f"Saving as {filepath} ... ", end="")
-    fig.savefig(filepath)
+    figure.savefig(filepath)

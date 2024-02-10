@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from pandas._testing import makeDateIndex
 import pytest
 
 Numeric = np.number[Any]
@@ -98,7 +97,7 @@ def multiindex(iris: pd.DataFrame, request: PytestFixtureRequest) -> pd.MultiInd
         pytest.param(
             lambda x: x**2, id="lambda squared"
         ),  # int -> int and float -> float
-        pytest.param(lambda arr: np.rint(arr).astype(int), id="rint"),  # any -> int
+        pytest.param(lambda arr: np.rint(arr).astype("int64"), id="rint"),  # any -> int
     ],
     name="func",
 )
@@ -146,12 +145,14 @@ def mpl_plots(
 @pytest.fixture
 def mpl_axes(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Axes:
     """Returns a variety of `plt.Axes` objects"""
+    assert isinstance(mpl_plots["ax"], plt.Axes)  # for mypy
     return mpl_plots["ax"]
 
 
 @pytest.fixture
 def mpl_figs(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Figure:
     """Returns a variety of `plt.Figure` objects"""
+    assert isinstance(mpl_plots["fig"], plt.Figure)  # for mypy
     return mpl_plots["fig"]
 
 
@@ -179,7 +180,7 @@ strftime_codes = [
 
 @pytest.fixture(
     params=iter(strftime_codes),
-    ids=[f"{today:{strftime}}" for strftime in strftime_codes],
+    ids=strftime_codes,
 )  # noqa
 def strftime(request: PytestFixtureRequest) -> str:
     """Various different strftime format codes"""
@@ -211,9 +212,9 @@ def datetime_df(request: PytestFixtureRequest) -> pd.DataFrame:
     9 2000-01-14 2000-03-05 2009-12-31"""
     df = pd.DataFrame(
         {
-            "A": makeDateIndex(freq="b"),
-            "B": makeDateIndex(freq="w"),
-            "C": makeDateIndex(freq="y"),
+            "A": pd.date_range("2000-01-01", periods=10, freq="b"),
+            "B": pd.date_range("2000-01-01", periods=10, freq="W"),
+            "C": pd.date_range("2000-01-01", periods=10, freq="YE"),
         }
     )
     time_offset = request.param

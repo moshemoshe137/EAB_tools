@@ -624,7 +624,9 @@ class TestDisplayAndSaveFig:
     ) -> None:
         fig: plt.Figure
         if isinstance(mpl_figs_and_axes, plt.Axes):
-            fig = mpl_figs_and_axes.get_figure()
+            get_figure = mpl_figs_and_axes.get_figure()
+            assert get_figure is not None  # for `mypy`
+            fig = get_figure
         else:
             fig = mpl_figs_and_axes
 
