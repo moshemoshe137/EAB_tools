@@ -1,6 +1,5 @@
 # pylint: disable=C0114, C0116
 from collections.abc import Sequence
-from contextlib import nullcontext as does_not_raise
 import itertools
 import os
 from pathlib import Path
@@ -34,6 +33,7 @@ except ImportError:
 
 @pytest.fixture(autouse=True)
 def _init(tmp_path: Path) -> None:
+    """Autouse fixture to chdir to tmp_path for all tests in this file."""
     os.chdir(tmp_path)
 
 
@@ -151,7 +151,7 @@ class TestDisplayAndSaveDf:
         if pd.api.types.is_string_dtype(col):
             context: ContextManager[Optional[object]] = pytest.raises(ValueError)
         else:
-            context = does_not_raise()
+            context = tm.does_not_raise()
         with context:
             # str columns with incorrect format code should
             # throw a ValueError
@@ -337,7 +337,7 @@ class TestDisplayAndSaveDf:
                 ValueError, match="could not convert string to float"
             )
         else:
-            context = does_not_raise()
+            context = tm.does_not_raise()
 
         with context:
             styler = display_and_save_df(
