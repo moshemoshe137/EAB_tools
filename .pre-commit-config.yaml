@@ -100,7 +100,7 @@ repos:
           - flake8-bugbear==24.1.17
           - flake8-comprehensions==3.14.0
         args:
-          - '--extend-ignore=E402'  # module level import not at top of file
+          - '--extend-ignore=E203,E402'
       - id: nbqa-isort
         additional_dependencies:
           - isort==5.13.2
