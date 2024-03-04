@@ -25,7 +25,7 @@ types-python-dateutil
 types-setuptools
 
 # Generate fake data
-Faker @ git+https://github.com/moshemoshe137/faker-fork.git@40b12b59f541e5dffa738fb7b479c72b8cfdd538
+Faker >= 23.2.0
 
 # Work with Jupyter Notebooks
 notebook
