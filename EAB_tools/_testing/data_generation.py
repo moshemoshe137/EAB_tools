@@ -1,5 +1,7 @@
 """Functions used to generate fake data."""
 
+from __future__ import annotations  # for Python 3.9
+
 import random
 from typing import Any
 
@@ -294,7 +296,7 @@ def generate_staff_df(
     """Generate a table of staff info for `select_assigned_staff`."""
     staff_df = pd.DataFrame()
 
-    locales_dict = dict(zip(fake.locales, fake.weights if fake.weights else []))
+    locales_dict = dict(zip(fake.locales, fake.weights if fake.weights else [1]))
 
     staff_df["name"] = [
         f"{fake[locale].last_name()}, {fake[locale].first_name()}"
