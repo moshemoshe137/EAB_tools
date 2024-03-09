@@ -1,7 +1,9 @@
 """Functions used to generate fake data."""
 
+import random
 from typing import Any
 
+from faker import Faker
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -282,6 +284,42 @@ def generate_cumulative_gpas(
     return np.round(all_gpas, 2)
 
 
+def generate_staff_df(
+    fake: Faker,
+    assigned_staff_role_probabilities: dict[str, float],
+    n_staff: int = 1,
+    existing_emails: pd.Series | None = None,
+    existing_ids: pd.Series | None = None,
+) -> pd.DataFrame:
+    """Generate a table of staff info for `select_assigned_staff`."""
+    staff_df = pd.DataFrame()
+
+    locales_dict = dict(zip(fake.locales, fake.weights if fake.weights else []))
+
+    staff_df["name"] = [
+        f"{fake[locale].last_name()}, {fake[locale].first_name()}"
+        for locale in sample_from_dict(locales_dict, n_staff)
+    ]
+
+    staff_df["email"] = generate_emails(
+        staff_df["name"], existing_emails=existing_emails
+    )
+
+    staff_df["id"] = pd.NA
+    existing_ids = pd.Series() if existing_ids is None else existing_ids
+    while staff_df["id"].isna().any():
+        # Repeat the ID number assignment if anyone overlaps with a Student ID (even tho
+        # this is EXTREMELY unlikely!)
+        staff_df["id"] = [
+            (f"ID{rand_id:09}" if f"ID{rand_id:09}" not in existing_ids else pd.NA)
+            for rand_id in random.sample(range(10**9), n_staff)
+        ]
+
+    staff_df["role"] = sample_from_dict(assigned_staff_role_probabilities, n_staff)
+
+    return staff_df
+
+
 def select_assigned_staff(
     staff_df: pd.DataFrame,
     probabilities_dict: dict[str, float],
@@ -332,4 +370,5 @@ __all__ = [
     "select_tag",
     "select_tags",
     "generate_cumulative_gpas",
+    "generate_staff_df",
 ]
