@@ -135,14 +135,3 @@ def load_df(
         (data_dir / ".eab_tools_cache").mkdir(exist_ok=True)
         df.to_pickle(pkl_path)
     return df
-
-
-def enrollments_report_date(
-    filename: PathLike, encoding: str = "utf_8_sig"
-) -> pd.Timestamp:
-    """Detect the report date of an enrollments report."""
-    # Grab the report date from one of the cells *just above* the header
-    with open(filename, encoding=encoding) as f:
-        date = f.readline().split(",")[3].replace('"', "")
-        strftime = r"%m/%d/%Y %I:%M %p"
-        return pd.to_datetime(date, format=strftime)
