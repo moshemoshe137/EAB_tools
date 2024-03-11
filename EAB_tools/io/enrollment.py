@@ -10,10 +10,10 @@ from typing import (
 
 import pandas as pd
 
-from EAB_tools import load_df
 import EAB_tools._testing as tm
 
 from .display import PathLike
+from .io import load_df
 
 
 def enrollments_report_date(
