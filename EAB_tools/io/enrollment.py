@@ -1,10 +1,11 @@
 """Load EAB enrollment reports."""
 
+from __future__ import annotations  # for Python 3.9
+
 from collections.abc import Sequence
 from typing import (
     Any,
     Literal,
-    Optional,
 )
 
 import pandas as pd
@@ -29,7 +30,7 @@ def enrollments_report_date(
 def load_enrollments_report(
     filename: tm.PathLike,
     cache: bool = True,
-    pkl_name: Optional[tm.PathLike] = None,
+    pkl_name: tm.PathLike | None = None,
     convert_dates: bool = True,
     convert_section_to_string: bool = True,
     convert_categoricals: bool = True,
