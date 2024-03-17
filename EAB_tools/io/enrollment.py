@@ -3,6 +3,7 @@
 from __future__ import annotations  # for Python 3.9
 
 from collections.abc import Sequence
+from pathlib import Path
 from typing import (
     Any,
     Literal,
@@ -14,6 +15,13 @@ import EAB_tools._testing as tm
 
 from .display import PathLike
 from .io import load_df
+
+try:
+    from tqdm import tqdm
+
+    _HAS_TQDM = True
+except ImportError:
+    _HAS_TQDM = False
 
 
 def enrollments_report_date(
@@ -74,5 +82,23 @@ def load_enrollments_report(
             "Class Days",
         ]
         df[categoricals] = df[categoricals].astype("category")
+
+    return df
+
+
+def load_all_enrollment_reports(
+    data_dir: PathLike,
+    glob: str = "campus-v2report-enrollment*.csv",
+    ignore_index: bool = True,
+    **kwargs: Any,
+) -> pd.DataFrame:
+    """Load all Enrollment Reports that match `glob` in a directory."""
+    filepaths = Path(data_dir).glob(glob)
+    individual_dfs = [
+        load_enrollments_report(filepath, **kwargs)
+        for filepath in (tqdm(list(filepaths)) if _HAS_TQDM else filepaths)
+    ]
+
+    df = pd.concat(individual_dfs, ignore_index=ignore_index)
 
     return df
