@@ -3,6 +3,7 @@
 """Generate a fake EAB v2 Enrollments Report."""
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 import random
 
@@ -23,6 +24,24 @@ from EAB_tools._testing.data_generation import (
 )
 
 # %%
+# Create the parser
+parser = argparse.ArgumentParser(
+    description=(
+        "Generate a fake EAB v2 Enrollments Report with an optional random seed."
+    )
+)
+# Add the --random-seed argument with shorthand -r
+parser.add_argument(
+    "-r",
+    "--random-seed",
+    type=int,
+    help="Optional random seed for reproducibility",
+)
+
+# Parse the arguments
+args = parser.parse_args()
+
+# %%
 locales_dict: dict[str, float] = {
     "en_US": 90,
     "es_MX": 5,
@@ -32,9 +51,9 @@ locales_dict: dict[str, float] = {
     "de_DE": 1,
 }
 fake = Faker(locales_dict)
-np.random.seed(42)  # Also sets the random seed for `pandas`
-Faker.seed(42)
-random.seed(42)
+np.random.seed(args.random_seed or 42)  # Also sets the random seed for `pandas`
+Faker.seed(args.random_seed or 42)
+random.seed(args.random_seed or 42)
 
 # %%
 n_records = 85_253
@@ -753,12 +772,17 @@ df = df_unordered_columns[
 df
 
 # %%
-p = Path(EAB_tools.__file__).parent / "tests" / "io" / "data"
-print(f"Saving to {p / 'campus-v2report-enrollment.csv'}")
-df.to_csv(p / "campus-v2report-enrollment.csv", index=False)
+d = Path(EAB_tools.__file__).parent / "tests" / "io" / "data"
+p = d / (
+    "campus-v2report-enrollment"
+    + (f"-{args.random_seed}" if args.random_seed else "")
+    + ".csv"
+)
+print(f"Saving to {p}")
+df.to_csv(p, index=False)
 
 # %%
-with open(p / "campus-v2report-enrollment.csv", "r+", encoding="UTF-8") as f:
+with open(p, "r+", encoding="UTF-8") as f:
     today = f"{pd.Timestamp.today():%m/%d/%Y %H:%M:00}"
 
     lines = [
