@@ -51,9 +51,11 @@ locales_dict: dict[str, float] = {
     "de_DE": 1,
 }
 fake = Faker(locales_dict)
-np.random.seed(args.random_seed or 42)  # Also sets the random seed for `pandas`
-Faker.seed(args.random_seed or 42)
-random.seed(args.random_seed or 42)
+
+RANDOM_SEED = args.random_seed if args.random_seed is not None else 42
+np.random.seed(RANDOM_SEED)  # Also sets the random seed for `pandas`
+Faker.seed(RANDOM_SEED)
+random.seed(RANDOM_SEED)
 
 # %%
 n_records = 85_253
@@ -775,7 +777,7 @@ df
 d = Path(EAB_tools.__file__).parent / "tests" / "io" / "data"
 p = d / (
     "campus-v2report-enrollment"
-    + (f"-{args.random_seed}" if args.random_seed else "")
+    + (f"-{RANDOM_SEED}" if args.random_seed is not None else "")
     + ".csv"
 )
 print(f"Saving to {p}")
