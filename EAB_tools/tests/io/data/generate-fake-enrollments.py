@@ -24,24 +24,6 @@ from EAB_tools._testing.data_generation import (
 )
 
 # %%
-# Create the parser
-parser = argparse.ArgumentParser(
-    description=(
-        "Generate a fake EAB v2 Enrollments Report with an optional random seed."
-    )
-)
-# Add the --random-seed argument with shorthand -r
-parser.add_argument(
-    "-r",
-    "--random-seed",
-    type=int,
-    help="Optional random seed for reproducibility",
-)
-
-# Parse the arguments
-args = parser.parse_args()
-
-# %%
 locales_dict: dict[str, float] = {
     "en_US": 90,
     "es_MX": 5,
@@ -52,13 +34,9 @@ locales_dict: dict[str, float] = {
 }
 fake = Faker(locales_dict)
 
-RANDOM_SEED = args.random_seed if args.random_seed is not None else 42
-np.random.seed(RANDOM_SEED)  # Also sets the random seed for `pandas`
-Faker.seed(RANDOM_SEED)
-random.seed(RANDOM_SEED)
 
 # %%
-n_records = 85_253
+_n_records = 85_253
 
 # %%
 sections_per_course_distribution: dict[float, float] = {
@@ -315,482 +293,535 @@ assigned_staff_role_probabilities: dict[str, float] = {
     "VA coordinator": 0.01,
 }
 
-# %%
-avg_sections_per_course = EV(sections_per_course_distribution)
-avg_instructors_per_course = EV(instructors_per_course_distribution)
-avg_sections_per_instructor = EV(sections_per_instructor_distribution)
-avg_students_per_section = EV(students_per_section_distribution)
-avg_courses_per_student = EV(num_courses_per_student_distribution)
-avg_credit_hours_per_student = EV(credit_hours_per_student_distribution)
 
 # %%
-# Calculate the number of unique students based on the average number of courses per
-# student
-n_unique_students = int(n_records / avg_courses_per_student)
+def generate_fake_enrollments(
+    RANDOM_SEED: int | None = None, n_records: int | None = None
+) -> None:
+    """Generate a fake EAB v2 Enrollments Report."""
+    _RANDOM_SEED = RANDOM_SEED if RANDOM_SEED is not None else 42
+    np.random.seed(_RANDOM_SEED)  # Also sets the random seed for `pandas`
+    Faker.seed(_RANDOM_SEED)
+    random.seed(_RANDOM_SEED)
 
-majors = (
-    "Accounting,Anthropology,Biochemistry,Biological Sciences,Business Administration,"
-    "Chemical Engineering,Civil Engineering,Computer Science,Economics,"
-    "Electrical Engineering,English Literature,Environmental Science,Finance,"
-    "Graphic Design,History,Information Technology,Journalism,Marketing,Mathematics,"
-    "Mechanical Engineering,Music,Nursing,Philosophy,Physics,Political Science,"
-    "Psychology,Sociology,Software Engineering,Statistics,Theater Arts"
-).split(",")
+    specified_n_records = n_records is not None
+    n_records = n_records if specified_n_records else _n_records
+    assert n_records is not None  # for mypy
 
-# Generate unique student data
-unique_students = pd.DataFrame(
-    {
-        "Student ID": [
-            # The builtin `random.sample` method from the Python standard lib can
-            # efficiently sample from `range` objects, while `np.random.sample` needs to
-            # construct the entire list in memory first.
-            f"ID{rand_id:09}"
-            for rand_id in random.sample(range(10**9), n_unique_students)
-        ],
-        "Student Alternate ID": np.NaN,
-        "Student Name": [
+    # %%
+    avg_sections_per_course = EV(sections_per_course_distribution)
+    # avg_instructors_per_course = EV(instructors_per_course_distribution)
+    avg_sections_per_instructor = EV(sections_per_instructor_distribution)
+    avg_students_per_section = EV(students_per_section_distribution)
+    avg_courses_per_student = EV(num_courses_per_student_distribution)
+    # avg_credit_hours_per_student = EV(credit_hours_per_student_distribution)
+
+    # %%
+    # Calculate the number of unique students based on the average number of courses per
+    # student
+    n_unique_students = int(n_records / avg_courses_per_student)
+
+    majors = (
+        "Accounting,Anthropology,Biochemistry,Biological Sciences"
+        "Business Administration,Chemical Engineering,Civil Engineering"
+        "Computer Science,Economics,Electrical Engineering,English Literature"
+        "Environmental Science,Finance,Graphic Design,History,Information Technology"
+        "Journalism,Marketing,Mathematics,Mechanical Engineering,Music,Nursing"
+        "Philosophy,Physics,Political Science,Psychology,Sociology"
+        "Software Engineering,Statistics,Theater Arts"
+    ).split(",")
+
+    # Generate unique student data
+    unique_students = pd.DataFrame(
+        {
+            "Student ID": [
+                # The builtin `random.sample` method from the Python standard lib can
+                # efficiently sample from `range` objects, while `np.random.sample`
+                # needs to construct the entire list in memory first.
+                f"ID{rand_id:09}"
+                for rand_id in random.sample(range(10**9), n_unique_students)
+            ],
+            "Student Alternate ID": np.NaN,
+            "Student Name": [
+                f"{fake[locale].last_name()}, {fake[locale].first_name()}"
+                for locale in sample_from_dict(locales_dict, size=n_unique_students)
+            ],
+            "Classification": sample_from_dict(
+                classifications_distribution, size=n_unique_students
+            ),
+            "Major": np.random.choice(majors, n_unique_students),
+            "Credit Hours": sample_from_dict(
+                credit_hours_per_student_distribution, size=n_unique_students
+            ),
+        }
+    ).replace("None", np.NaN)
+
+    # %%
+    unique_students["Student E-mail"] = generate_emails(unique_students["Student Name"])
+
+    # %%
+    existing_emails = unique_students["Student E-mail"].copy()
+    existing_ids = unique_students["Student ID"].copy()
+
+    # %%
+    # Generate Categories
+    unique_students["Categories"] = select_categories(n_unique_students)
+
+    # %%
+    unique_students["Tags"] = select_tags(n_unique_students)
+
+    # %%
+    unique_students["Cumulative GPA"] = generate_cumulative_gpas(len(unique_students))
+
+    # %%
+    assigned_staff_role_probabilities_no_professor = {
+        role: prob
+        for role, prob in assigned_staff_role_probabilities.items()
+        if role.casefold() != "professor"
+    }
+    staff_df = generate_staff_df(
+        fake=fake,
+        assigned_staff_role_probabilities=(
+            assigned_staff_role_probabilities_no_professor
+        ),
+        n_staff=n_unique_students // 40,
+        existing_emails=existing_emails,
+        existing_ids=existing_ids,
+    )
+
+    unique_students["Assigned Staff"] = select_assigned_staff(
+        staff_df, assigned_staff_role_probabilities, n_unique_students
+    )
+
+    # %%
+    existing_emails = pd.concat([existing_emails, staff_df["email"]])
+    existing_ids = pd.concat([existing_ids, staff_df["id"]])
+
+    # %%
+    num_courses_per_student = sample_from_dict(
+        num_courses_per_student_distribution, size=n_unique_students
+    )
+
+    # %%
+    # Replicate each student entry based on the number of courses they're taking
+    replicated_students = unique_students.loc[
+        unique_students.index.repeat(num_courses_per_student)
+    ].reset_index(drop=True)
+
+    # %%
+    # Course info
+    # Generate a course schedule to assign students courses
+    n_course_numbers_needed = np.ceil(
+        n_records / avg_students_per_section / avg_sections_per_course
+    ).astype(int)
+
+    n_instructors_needed = np.ceil(
+        n_course_numbers_needed / avg_sections_per_instructor
+    ).astype(int)
+
+    n_sections_per_course = sample_from_dict(
+        sections_per_course_distribution, size=n_course_numbers_needed
+    )
+
+    section_id_nums = np.random.choice(
+        np.arange(10**4, 10**5), size=sum(n_sections_per_course), replace=False
+    )
+
+    course_depts = (
+        "AAS,AHS,ANT,ART,CAN,CIN,COM,CSC,DES,EAS,EDL,EDU,ENG,FME,GEN,HIS,HSC,LAN,LAS"
+        "LAW,MED,MTH,MUS,NUR,OBG,OPH,PHA,PHE,PHY,PTH,QRM,RAC,ROM,SCI,SCW,SLV,SOC,STT"
+        "SUR,THR,URB,VIA"
+    ).split(",")
+    course_number_ints = sample_from_dict(
+        {
+            i: 1 / i  # Higher course numbers map to lower probabilities
+            for i in range(95, 601)  # Course numbers can fall between 95 and 601
+        },
+        size=180,
+        replace=False,
+    )
+
+    # Add some course numbers that we definitely want to see
+    course_numbers_set = set(course_number_ints) | {101, 200, 600, "115L", "105H"}
+    course_numbers_list = sorted(
+        f"{x:03}" if isinstance(x, int) else str(x) for x in course_numbers_set
+    )
+
+    course_numbers = (
+        pd.Series(
+            f"{course_dept}-"
+            + (
+                f"{course_number:03}"
+                if isinstance(course_number, int)
+                else str(course_number)
+            )
+            for course_dept in course_depts
+            for course_number in course_numbers_list
+        )
+        .sample(n_course_numbers_needed)
+        .sort_values(ignore_index=True)
+    )
+
+    course_names = pd.Series(
+        fake["en_US"].unique.sentence(nb_words=6)
+        for _ in range(n_course_numbers_needed)
+    ).str.replace(
+        r"\.$", "", regex=True  # strip the final period
+    )
+
+    course_schedule_list = []
+    for course_number, course_name, num_course_sections, section_id_num in zip(
+        course_numbers, course_names, n_sections_per_course, section_id_nums
+    ):
+        for _section_num in range(num_course_sections):
+            course_schedule_list.append(
+                {
+                    "Course Number": course_number,
+                    "Course Name": course_name,
+                    "Section": section_id_num,
+                }
+            )
+
+    course_schedule = pd.DataFrame(course_schedule_list)
+
+    course_schedule
+
+    # %%
+    instructors_df = pd.DataFrame()
+    instructors_df["instructor_names"] = pd.Series(
+        [
             f"{fake[locale].last_name()}, {fake[locale].first_name()}"
-            for locale in sample_from_dict(locales_dict, size=n_unique_students)
+            for locale in sample_from_dict(locales_dict, size=n_instructors_needed)
+        ]
+    )
+    instructors_df["instructor_emails"] = generate_emails(
+        instructors_df["instructor_names"],
+        existing_emails=existing_emails,
+    )
+    existing_emails = pd.concat([existing_emails, instructors_df["instructor_emails"]])
+
+    instructors_df["instructor_id"] = pd.NA
+    while instructors_df["instructor_id"].isna().any():
+        # Repeat the ID number assignment if anyone overlaps with a Student ID or Staff
+        # ID (even tho this is EXTREMELY unlikely!)
+        instructors_df["instructor_id"] = [
+            f"ID{rand_id:09}" if f"ID{rand_id:09}" not in existing_ids else pd.NA
+            for rand_id in random.sample(range(10**9), n_instructors_needed)
+        ]
+    existing_ids = pd.concat([existing_ids, instructors_df["instructor_id"]])
+
+    instructors_df["is_assignable_as_staff"] = np.random.choice(
+        [True, False],
+        size=len(instructors_df),
+        p=[
+            assigned_staff_role_probabilities["Professor"],
+            1 - assigned_staff_role_probabilities.pop("Professor"),
         ],
-        "Classification": sample_from_dict(
-            classifications_distribution, size=n_unique_students
-        ),
-        "Major": np.random.choice(majors, n_unique_students),
-        "Credit Hours": sample_from_dict(
-            credit_hours_per_student_distribution, size=n_unique_students
-        ),
-    }
-).replace("None", np.NaN)
+    )
 
-# %%
-unique_students["Student E-mail"] = generate_emails(unique_students["Student Name"])
+    instructors_df["name_email_formatted"] = (
+        instructors_df["instructor_names"]
+        + " ("
+        + instructors_df["instructor_id"]
+        + ") <"
+        + instructors_df["instructor_emails"]
+        + ">"
+    )
 
-# %%
-existing_emails = unique_students["Student E-mail"].copy()
-existing_ids = unique_students["Student ID"].copy()
+    num_instructors_per_section = sample_from_dict(
+        instructors_per_course_distribution, len(course_schedule)
+    )
 
-# %%
-# Generate Categories
-unique_students["Categories"] = select_categories(n_unique_students)
+    course_schedule["Instructors"] = [
+        (
+            "; ".join(instructors_df["name_email_formatted"].sample(n).sort_values())
+            if n > 0
+            else None
+        )
+        for n in num_instructors_per_section
+    ]
 
-# %%
-unique_students["Tags"] = select_tags(n_unique_students)
+    # %%
+    # Schedule information
+    # Start Date & End Date
+    course_schedule["Start Date"] = [
+        fake.date_between(start_date="-3Months", end_date="+3Months")
+        for _ in range(len(course_schedule))
+    ]
+    course_schedule["End Date"] = course_schedule["Start Date"] + pd.Timedelta(weeks=10)
 
-# %%
-unique_students["Cumulative GPA"] = generate_cumulative_gpas(len(unique_students))
+    # %%
+    # Start Time & End Time
+    course_schedule["Start Time"] = (
+        sample_from_dict(start_times_distribution, size=len(course_schedule)).astype(
+            np.object_
+        )
+        + " CT"
+    )
 
-# %%
-assigned_staff_role_probabilities_no_professor = {
-    role: prob
-    for role, prob in assigned_staff_role_probabilities.items()
-    if role.casefold() != "professor"
-}
-staff_df = generate_staff_df(
-    fake=fake,
-    assigned_staff_role_probabilities=assigned_staff_role_probabilities_no_professor,
-    n_staff=n_unique_students // 40,
-    existing_emails=existing_emails,
-    existing_ids=existing_ids,
-)
+    LATEST_POSSIBLE_END_TIME = pd.to_datetime("10:00 PM", format="%I:%M %p")
 
-unique_students["Assigned Staff"] = select_assigned_staff(
-    staff_df, assigned_staff_role_probabilities, n_unique_students
-)
-
-# %%
-existing_emails = pd.concat([existing_emails, staff_df["email"]])
-existing_ids = pd.concat([existing_ids, staff_df["id"]])
-
-# %%
-num_courses_per_student = sample_from_dict(
-    num_courses_per_student_distribution, size=n_unique_students
-)
-
-# %%
-# Replicate each student entry based on the number of courses they're taking
-replicated_students = unique_students.loc[
-    unique_students.index.repeat(num_courses_per_student)
-].reset_index(drop=True)
-
-# %%
-# Course info
-# Generate a course schedule to assign students courses
-n_course_numbers_needed = np.ceil(
-    n_records / avg_students_per_section / avg_sections_per_course
-).astype(int)
-
-n_instructors_needed = np.ceil(
-    n_course_numbers_needed / avg_sections_per_instructor
-).astype(int)
-
-n_sections_per_course = sample_from_dict(
-    sections_per_course_distribution, size=n_course_numbers_needed
-)
-
-section_id_nums = np.random.choice(
-    np.arange(10**4, 10**5), size=sum(n_sections_per_course), replace=False
-)
-
-course_depts = (
-    "AAS,AHS,ANT,ART,CAN,CIN,COM,CSC,DES,EAS,EDL,EDU,ENG,FME,GEN,HIS,HSC,LAN,LAS,LAW,"
-    "MED,MTH,MUS,NUR,OBG,OPH,PHA,PHE,PHY,PTH,QRM,RAC,ROM,SCI,SCW,SLV,SOC,STT,SUR,THR,"
-    "URB,VIA"
-).split(",")
-course_number_ints = sample_from_dict(
-    {
-        i: 1 / i  # Higher course numbers map to lower probabilities
-        for i in range(95, 601)  # Course numbers can fall between 95 and 601
-    },
-    size=180,
-    replace=False,
-)
-
-
-# Add some course numbers that we definitely want to see
-course_numbers_set = set(course_number_ints) | {101, 200, 600, "115L", "105H"}
-course_numbers_list = sorted(
-    f"{x:03}" if isinstance(x, int) else str(x) for x in course_numbers_set
-)
-
-
-course_numbers = (
-    pd.Series(
-        f"{course_dept}-"
+    potential_end_times_with_arbitrary_date = (
+        pd.to_datetime(
+            course_schedule["Start Time"].str.replace(" CT", ""), format="%I:%M %p"
+        )
         + (
-            f"{course_number:03}"
-            if isinstance(course_number, int)
-            else str(course_number)
+            sample_from_dict(
+                course_duration_distribution, size=len(course_schedule)
+            ).astype("timedelta64")
         )
-        for course_dept in course_depts
-        for course_number in course_numbers_list
+    ).rename("Potential End Times")
+
+    potential_end_times_with_arbitrary_date.loc[
+        potential_end_times_with_arbitrary_date > LATEST_POSSIBLE_END_TIME
+    ] = LATEST_POSSIBLE_END_TIME
+
+    course_schedule["End Time"] = (
+        potential_end_times_with_arbitrary_date.dt.strftime("%I:%M %p")
+        .str.lstrip("0")
+        .rename("End Time")
+    ) + " CT"
+
+    # %%
+    # Class Days
+    course_schedule["Class Days"] = sample_from_dict(
+        class_days_distribution, len(course_schedule)
     )
-    .sample(n_course_numbers_needed)
-    .sort_values(ignore_index=True)
-)
 
-course_names = pd.Series(
-    fake["en_US"].unique.sentence(nb_words=6) for _ in range(n_course_numbers_needed)
-).str.replace(
-    r"\.$", "", regex=True  # strip the final period
-)
+    # %%
+    # Generate the total number of courses needed by summing up courses for each student
+    total_courses_needed = num_courses_per_student.sum()
 
+    # Generate a random course index for each needed course
+    random_course_indices = np.random.choice(
+        course_schedule.index, size=total_courses_needed, replace=True
+    )
 
-course_schedule_list = []
-for course_number, course_name, num_course_sections, section_id_num in zip(
-    course_numbers, course_names, n_sections_per_course, section_id_nums
-):
-    for _section_num in range(num_course_sections):
-        course_schedule_list.append(
-            {
-                "Course Number": course_number,
-                "Course Name": course_name,
-                "Section": section_id_num,
-            }
+    # Assign these random course indices to each student based on how many courses they
+    # need
+    student_course_indices = np.split(
+        random_course_indices, np.cumsum(num_courses_per_student)[:-1]
+    )
+
+    # Create a DataFrame for replicated students
+    replicated_students = pd.DataFrame(
+        {
+            "Student ID": np.repeat(
+                unique_students["Student ID"], num_courses_per_student
+            ),
+            "Course Index": np.concatenate(student_course_indices),
+        }
+    )
+
+    # Merge the replicated students DataFrame with the course schedule using the course
+    # index. Then, drop the "Course Index" column as it's no longer needed. Finally,
+    # drop duplicate enrollments for each student (this behavior may change in the
+    # future).
+    replicated_students = (
+        replicated_students.merge(
+            course_schedule.reset_index(),
+            left_on="Course Index",
+            right_index=True,
+            how="left",
         )
+        .drop(columns=["Course Index"])
+        .drop_duplicates(["Student ID", "Course Number"])
+    )
 
-course_schedule = pd.DataFrame(course_schedule_list)
+    # Merge with unique_students to get student details
+    replicated_students = replicated_students.merge(
+        unique_students, on="Student ID", how="left"
+    )
 
-course_schedule
+    replicated_students
 
-# %%
-instructors_df = pd.DataFrame()
-instructors_df["instructor_names"] = pd.Series(
-    [
-        f"{fake[locale].last_name()}, {fake[locale].first_name()}"
-        for locale in sample_from_dict(locales_dict, size=n_instructors_needed)
+    # %%
+    # Add Professors to "Assigned Staff"
+    # Explode the instructors list, since some sections will have multiple instructors
+    exploded_instructors = (
+        replicated_students["Instructors"].str.split("; ").explode().dropna().to_frame()
+    )
+
+    # Add the student IDs to each row, aligning on the index
+    exploded_instructors["Student ID"] = replicated_students["Student ID"]
+
+    # Merge the info from the `instructors_df`
+    # we only care about those instructors who are assignable as staff
+    merged_enrollment_instructor_data = exploded_instructors.merge(
+        instructors_df[instructors_df["is_assignable_as_staff"]],
+        left_on="Instructors",
+        right_on="name_email_formatted",
+        how="inner",
+    )
+
+    # Use a regex to format the names how we'd like for the "Assigned Staff" column
+    merged_enrollment_instructor_data[
+        "Assigned Professors"
+    ] = merged_enrollment_instructor_data["instructor_names"].str.replace(
+        r"^(?P<last>[\w '\-]+), (?P<first>[\w '\-]+)$",
+        r"\g<first> \g<last> (Professor)",
+        regex=True,
+    )
+
+    # Group the staff by instructors and `", ".join` them
+    assigned_professors = merged_enrollment_instructor_data.groupby("Student ID")[
+        "Assigned Professors"
+    ].agg(", ".join)
+
+    # Merge the assigned staff back to our enrollments report
+    replicated_students["Assigned Staff"] = (
+        replicated_students[["Student ID", "Assigned Staff"]]
+        .merge(
+            assigned_professors,
+            how="left",
+            left_on="Student ID",
+            right_index=True,
+        )
+        .fillna("")
+        .apply(
+            lambda x: x["Assigned Staff"]
+            + (", " if x["Assigned Staff"] and x["Assigned Professors"] else "")
+            + x["Assigned Professors"],
+            axis="columns",
+        )
+    )
+
+    # %%
+    # Alphabetize each student's "Assigned Staff"
+    replicated_students["Assigned Staff"] = (
+        replicated_students["Assigned Staff"]
+        .str.split(", ")
+        .apply(sorted)
+        .apply(", ".join)
+    )
+
+    # %%
+    # Enrollment info
+    replicated_students["Dropped?"] = sample_from_dict(
+        {"Yes": 0.24, "No": 0.76}, size=len(replicated_students)
+    )
+    replicated_students["Dropped Date"] = [
+        fake.date_between(start_date="-1y", end_date="today") if drop == "Yes" else None
+        for drop in replicated_students["Dropped?"]
     ]
-)
-instructors_df["instructor_emails"] = generate_emails(
-    instructors_df["instructor_names"],
-    existing_emails=existing_emails,
-)
-existing_emails = pd.concat([existing_emails, instructors_df["instructor_emails"]])
 
-instructors_df["instructor_id"] = pd.NA
-while instructors_df["instructor_id"].isna().any():
-    # Repeat the ID number assignment if anyone overlaps with a Student ID or Staff ID
-    # (even tho this is EXTREMELY unlikely!)
-    instructors_df["instructor_id"] = [
-        f"ID{rand_id:09}" if f"ID{rand_id:09}" not in existing_ids else pd.NA
-        for rand_id in random.sample(range(10**9), n_instructors_needed)
-    ]
-existing_ids = pd.concat([existing_ids, instructors_df["instructor_id"]])
-
-
-instructors_df["is_assignable_as_staff"] = np.random.choice(
-    [True, False],
-    size=len(instructors_df),
-    p=[
-        assigned_staff_role_probabilities["Professor"],
-        1 - assigned_staff_role_probabilities.pop("Professor"),
-    ],
-)
-
-instructors_df["name_email_formatted"] = (
-    instructors_df["instructor_names"]
-    + " ("
-    + instructors_df["instructor_id"]
-    + ") <"
-    + instructors_df["instructor_emails"]
-    + ">"
-)
-
-num_instructors_per_section = sample_from_dict(
-    instructors_per_course_distribution, len(course_schedule)
-)
-
-course_schedule["Instructors"] = [
-    (
-        "; ".join(instructors_df["name_email_formatted"].sample(n).sort_values())
-        if n > 0
-        else None
+    # %%
+    # Add other enrollment-specific information (e.g., grades, attendance) in a similar
+    # manner
+    replicated_students["Midterm Grade"] = np.random.choice(
+        ["A", "B", "C", "D", "F"], len(replicated_students)
     )
-    for n in num_instructors_per_section
-]
-
-# %%
-# Schedule information
-# Start Date & End Date
-course_schedule["Start Date"] = [
-    fake.date_between(start_date="-3Months", end_date="+3Months")
-    for _ in range(len(course_schedule))
-]
-course_schedule["End Date"] = course_schedule["Start Date"] + pd.Timedelta(weeks=10)
-
-# %%
-# Start Time & End Time
-course_schedule["Start Time"] = (
-    sample_from_dict(start_times_distribution, size=len(course_schedule)).astype(
-        np.object_
+    replicated_students["Final Grade"] = np.random.choice(
+        ["A", "B", "C", "D", "F"], len(replicated_students)
     )
-    + " CT"
-)
-
-
-LATEST_POSSIBLE_END_TIME = pd.to_datetime("10:00 PM", format="%I:%M %p")
-
-potential_end_times_with_arbitrary_date = (
-    pd.to_datetime(
-        course_schedule["Start Time"].str.replace(" CT", ""), format="%I:%M %p"
+    replicated_students["Total Progress Reports"] = np.random.poisson(
+        0.4, len(replicated_students)
     )
-    + (
-        sample_from_dict(
-            course_duration_distribution, size=len(course_schedule)
-        ).astype("timedelta64")
+
+    # The proportion of students with 0 absences
+    PERFECT_ATTENDANCE_RATE = 0.85
+    # Model the distribution of non-zero absences
+    replicated_students["Absences"] = replicated_students["Unexcused Absences"] = (
+        np.random.poisson(2.84, size=len(replicated_students)).clip(min=1)
     )
-).rename("Potential End Times")
+    # Replace `PERFECT_ATTENDANCE_RATE` proportion of records with 0 absences
+    replicated_students.loc[
+        np.random.rand(len(replicated_students)) > PERFECT_ATTENDANCE_RATE, "Absences"
+    ] = 0
+    replicated_students["Excused Absences"] = 0
 
-potential_end_times_with_arbitrary_date.loc[
-    potential_end_times_with_arbitrary_date > LATEST_POSSIBLE_END_TIME
-] = LATEST_POSSIBLE_END_TIME
+    # %%
+    # Create DataFrame
+    # and ensure that the dataframe is not longer than `n_records`
+    df_unordered_columns = replicated_students.iloc[:n_records]
 
-course_schedule["End Time"] = (
-    potential_end_times_with_arbitrary_date.dt.strftime("%I:%M %p")
-    .str.lstrip("0")
-    .rename("End Time")
-) + " CT"
+    # Order the columns as expected:
+    df = df_unordered_columns[
+        [
+            "Student Name",
+            "Student E-mail",
+            "Student ID",
+            "Student Alternate ID",
+            "Categories",
+            "Tags",
+            "Classification",
+            "Major",
+            "Cumulative GPA",
+            "Assigned Staff",
+            "Course Name",
+            "Course Number",
+            "Section",
+            "Instructors",
+            "Dropped?",
+            "Dropped Date",
+            "Midterm Grade",
+            "Final Grade",
+            "Total Progress Reports",
+            "Absences",
+            "Unexcused Absences",
+            "Excused Absences",
+            "Credit Hours",
+            "Start Date",
+            "End Date",
+            "Start Time",
+            "End Time",
+            "Class Days",
+        ]
+    ].replace({None: np.NaN})
 
-# %%
-# Class Days
-course_schedule["Class Days"] = sample_from_dict(
-    class_days_distribution, len(course_schedule)
-)
+    # %%
+    df
 
-# %%
-# Generate the total number of courses needed by summing up courses for each student
-total_courses_needed = num_courses_per_student.sum()
-
-# Generate a random course index for each needed course
-random_course_indices = np.random.choice(
-    course_schedule.index, size=total_courses_needed, replace=True
-)
-
-# Assign these random course indices to each student based on how many courses they need
-student_course_indices = np.split(
-    random_course_indices, np.cumsum(num_courses_per_student)[:-1]
-)
-
-# Create a DataFrame for replicated students
-replicated_students = pd.DataFrame(
-    {
-        "Student ID": np.repeat(unique_students["Student ID"], num_courses_per_student),
-        "Course Index": np.concatenate(student_course_indices),
-    }
-)
-
-# Merge the replicated students DataFrame with the course schedule using the course
-# index. Then, drop the "Course Index" column as it's no longer needed. Finally, drop
-# duplicate enrollments for each student (this behavior may change in the future).
-replicated_students = (
-    replicated_students.merge(
-        course_schedule.reset_index(),
-        left_on="Course Index",
-        right_index=True,
-        how="left",
+    # %%
+    d = Path(EAB_tools.__file__).parent / "tests" / "io" / "data"
+    p = d / (
+        "campus-v2report-enrollment"
+        + (f"-{_RANDOM_SEED}" if RANDOM_SEED is not None else "")
+        + (f"-{n_records}" if specified_n_records else "")
+        + ".csv"
     )
-    .drop(columns=["Course Index"])
-    .drop_duplicates(["Student ID", "Course Number"])
-)
+    print(f"Saving to {p}")
+    df.to_csv(p, index=False)
 
-# Merge with unique_students to get student details
-replicated_students = replicated_students.merge(
-    unique_students, on="Student ID", how="left"
-)
+    # %%
+    with open(p, "r+", encoding="UTF-8") as f:
+        today = f"{pd.Timestamp.today():%m/%d/%Y %H:%M:00}"
 
-replicated_students
+        lines = [
+            f"Example University,Student Enrollments,,{today},Moshe Rubin\n",
+            "\n",
+        ] + f.readlines()
+
+        f.seek(0)
+        f.writelines(lines)
+
 
 # %%
-# Add Professors to "Assigned Staff"
-# Explode the instructors list, since some sections will have multiple instructors
-exploded_instructors = (
-    replicated_students["Instructors"].str.split("; ").explode().dropna().to_frame()
-)
+if __name__ == "__main__":
 
-# Add the student IDs to each row, aligning on the index
-exploded_instructors["Student ID"] = replicated_students["Student ID"]
-
-# Merge the info from the `instructors_df`
-# we only care about those instructors who are assignable as staff
-merged_enrollment_instructor_data = exploded_instructors.merge(
-    instructors_df[instructors_df["is_assignable_as_staff"]],
-    left_on="Instructors",
-    right_on="name_email_formatted",
-    how="inner",
-)
-
-# Use a regex to format the names how we'd like for the "Assigned Staff" column
-merged_enrollment_instructor_data[
-    "Assigned Professors"
-] = merged_enrollment_instructor_data["instructor_names"].str.replace(
-    r"^(?P<last>[\w '\-]+), (?P<first>[\w '\-]+)$",
-    r"\g<first> \g<last> (Professor)",
-    regex=True,
-)
-
-# Group the staff by instructors and `", ".join` them
-assigned_professors = merged_enrollment_instructor_data.groupby("Student ID")[
-    "Assigned Professors"
-].agg(", ".join)
-
-# Merge the assigned staff back to our enrollments report
-replicated_students["Assigned Staff"] = (
-    replicated_students[["Student ID", "Assigned Staff"]]
-    .merge(
-        assigned_professors,
-        how="left",
-        left_on="Student ID",
-        right_index=True,
+    # Create the parser
+    parser = argparse.ArgumentParser(
+        description=(
+            "Generate a fake EAB v2 Enrollments Report with an optional random seed."
+        )
     )
-    .fillna("")
-    .apply(
-        lambda x: x["Assigned Staff"]
-        + (", " if x["Assigned Staff"] and x["Assigned Professors"] else "")
-        + x["Assigned Professors"],
-        axis="columns",
+    # Add the --random-seed argument with shorthand -r
+    parser.add_argument(
+        "-r",
+        "--random-seed",
+        type=int,
+        help="Optional random seed for reproducibility.",
     )
-)
 
-# %%
-# Alphabetize each student's "Assigned Staff"
-replicated_students["Assigned Staff"] = (
-    replicated_students["Assigned Staff"].str.split(", ").apply(sorted).apply(", ".join)
-)
+    # Add the --n-records arguments with shorthand -n
+    parser.add_argument(
+        "-n",
+        "--n-records",
+        type=int,
+        help=f"Specify the number of records to create. Defaults to {_n_records:,}.",
+    )
 
-# %%
-# Enrollment info
-replicated_students["Dropped?"] = sample_from_dict(
-    {"Yes": 0.24, "No": 0.76}, size=len(replicated_students)
-)
-replicated_students["Dropped Date"] = dropped_dates = [
-    fake.date_between(start_date="-1y", end_date="today") if drop == "Yes" else None
-    for drop in replicated_students["Dropped?"]
-]
+    # Parse the arguments
+    args = parser.parse_args()
 
-# %%
-# Add other enrollment-specific information (e.g., grades, attendance) in a similar
-# manner
-replicated_students["Midterm Grade"] = np.random.choice(
-    ["A", "B", "C", "D", "F"], len(replicated_students)
-)
-replicated_students["Final Grade"] = np.random.choice(
-    ["A", "B", "C", "D", "F"], len(replicated_students)
-)
-replicated_students["Total Progress Reports"] = np.random.poisson(
-    0.4, len(replicated_students)
-)
-
-# The proportion of students with 0 absences
-PERFECT_ATTENDANCE_RATE = 0.85
-# Model the distribution of non-zero absences
-replicated_students["Absences"] = replicated_students["Unexcused Absences"] = (
-    np.random.poisson(2.84, size=len(replicated_students)).clip(min=1)
-)
-# Replace `PERFECT_ATTENDANCE_RATE` proportion of records with 0 absences
-replicated_students.loc[
-    np.random.rand(len(replicated_students)) > PERFECT_ATTENDANCE_RATE, "Absences"
-] = 0
-replicated_students["Excused Absences"] = 0
-
-# %%
-# Create DataFrame
-# and ensure that the dataframe is not longer than `n_records`
-df_unordered_columns = replicated_students.iloc[:n_records]
-
-# Order the columns as expected:
-df = df_unordered_columns[
-    [
-        "Student Name",
-        "Student E-mail",
-        "Student ID",
-        "Student Alternate ID",
-        "Categories",
-        "Tags",
-        "Classification",
-        "Major",
-        "Cumulative GPA",
-        "Assigned Staff",
-        "Course Name",
-        "Course Number",
-        "Section",
-        "Instructors",
-        "Dropped?",
-        "Dropped Date",
-        "Midterm Grade",
-        "Final Grade",
-        "Total Progress Reports",
-        "Absences",
-        "Unexcused Absences",
-        "Excused Absences",
-        "Credit Hours",
-        "Start Date",
-        "End Date",
-        "Start Time",
-        "End Time",
-        "Class Days",
-    ]
-].replace({None: np.NaN})
-
-# %%
-df
-
-# %%
-d = Path(EAB_tools.__file__).parent / "tests" / "io" / "data"
-p = d / (
-    "campus-v2report-enrollment"
-    + (f"-{RANDOM_SEED}" if args.random_seed is not None else "")
-    + ".csv"
-)
-print(f"Saving to {p}")
-df.to_csv(p, index=False)
-
-# %%
-with open(p, "r+", encoding="UTF-8") as f:
-    today = f"{pd.Timestamp.today():%m/%d/%Y %H:%M:00}"
-
-    lines = [
-        f"Example University,Student Enrollments,,{today},Moshe Rubin\n",
-        "\n",
-    ] + f.readlines()
-
-    f.seek(0)
-    f.writelines(lines)
+    generate_fake_enrollments(args.random_seed, args.n_records)
