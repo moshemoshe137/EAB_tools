@@ -342,7 +342,9 @@ def select_assigned_staff(
         n_has_this_staff = mask_has_this_staff.sum()
 
         chosen_staff = pd.Series(
-            np.random.choice(this_role_df["name"], n_has_this_staff)
+            np.random.choice(
+                this_role_df["name"], n_has_this_staff if len(this_role_df) > 0 else 0
+            )
         )
 
         staff_name_formatted = chosen_staff.str.replace(
