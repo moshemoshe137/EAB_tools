@@ -44,8 +44,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Generate Test Data
       run: |
-        ipython "./EAB_tools/tests/io/data/Generate Test Images.ipynb"
-        ipython ./EAB_tools/tests/io/data/generate-fake-enrollments.ipynb
+        python ./EAB_tools/tests/io/data/generate-all-test-data.py
     - name: Test with pytest
       run: >
         pytest
