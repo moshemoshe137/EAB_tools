@@ -26,7 +26,9 @@ RANDOM_SEEDS = [
 
 parent_dir = Path(__file__).parent
 
-if __name__ == "__main__":
+
+def main() -> None:
+    """Generate all data for tests from a single script."""
     # Generate test images
     subprocess.run(
         [sys.executable, "-m", "IPython", f"{parent_dir/'Generate Test Images.ipynb'}"]
@@ -40,3 +42,7 @@ if __name__ == "__main__":
             int(random_seed),
             int(np.clip(random_seed, 1, 10**6)) if random_seed > 0 else None,
         )
+
+
+if __name__ == "__main__":
+    main()
