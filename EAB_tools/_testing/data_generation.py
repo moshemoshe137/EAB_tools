@@ -298,10 +298,13 @@ def generate_staff_df(
 
     locales_dict = dict(zip(fake.locales, fake.weights if fake.weights else [1]))
 
-    staff_df["name"] = [
-        f"{fake[locale].last_name()}, {fake[locale].first_name()}"
-        for locale in sample_from_dict(locales_dict, n_staff)
-    ]
+    staff_df["name"] = pd.Series(
+        [
+            f"{fake[locale].last_name()}, {fake[locale].first_name()}"
+            for locale in sample_from_dict(locales_dict, n_staff)
+        ],
+        dtype="string",
+    )
 
     staff_df["email"] = generate_emails(
         staff_df["name"], existing_emails=existing_emails
@@ -338,13 +341,13 @@ def select_assigned_staff(
     assigned_staff = pd.Series(dtype="string", index=range(length))
     for staff_role, prob in probabilities_dict.items():
         this_role_df = staff_df[staff_df["role"] == staff_role]
+        if len(this_role_df) == 0:
+            continue
         mask_has_this_staff = np.random.rand(length) < prob
         n_has_this_staff = mask_has_this_staff.sum()
 
         chosen_staff = pd.Series(
-            np.random.choice(
-                this_role_df["name"], n_has_this_staff if len(this_role_df) > 0 else 0
-            )
+            np.random.choice(this_role_df["name"], n_has_this_staff)
         )
 
         staff_name_formatted = chosen_staff.str.replace(

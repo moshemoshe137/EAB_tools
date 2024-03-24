@@ -436,7 +436,7 @@ def generate_fake_enrollments(
             i: 1 / i  # Higher course numbers map to lower probabilities
             for i in range(95, 601)  # Course numbers can fall between 95 and 601
         },
-        size=180,
+        size=min(len(range(95, 601)), n_course_numbers_needed),
         replace=False,
     )
 
@@ -457,7 +457,9 @@ def generate_fake_enrollments(
             for course_dept in course_depts
             for course_number in course_numbers_list
         )
-        .sample(n_course_numbers_needed)
+        .sample(
+            min(n_course_numbers_needed, len(course_depts) * len(course_numbers_list))
+        )
         .sort_values(ignore_index=True)
     )
 
@@ -514,7 +516,7 @@ def generate_fake_enrollments(
         size=len(instructors_df),
         p=[
             assigned_staff_role_probabilities["Professor"],
-            1 - assigned_staff_role_probabilities.pop("Professor"),
+            1 - assigned_staff_role_probabilities["Professor"],
         ],
     )
 
@@ -735,38 +737,42 @@ def generate_fake_enrollments(
     df_unordered_columns = replicated_students.iloc[:n_records]
 
     # Order the columns as expected:
-    df = df_unordered_columns[
-        [
-            "Student Name",
-            "Student E-mail",
-            "Student ID",
-            "Student Alternate ID",
-            "Categories",
-            "Tags",
-            "Classification",
-            "Major",
-            "Cumulative GPA",
-            "Assigned Staff",
-            "Course Name",
-            "Course Number",
-            "Section",
-            "Instructors",
-            "Dropped?",
-            "Dropped Date",
-            "Midterm Grade",
-            "Final Grade",
-            "Total Progress Reports",
-            "Absences",
-            "Unexcused Absences",
-            "Excused Absences",
-            "Credit Hours",
-            "Start Date",
-            "End Date",
-            "Start Time",
-            "End Time",
-            "Class Days",
+    df = (
+        df_unordered_columns[
+            [
+                "Student Name",
+                "Student E-mail",
+                "Student ID",
+                "Student Alternate ID",
+                "Categories",
+                "Tags",
+                "Classification",
+                "Major",
+                "Cumulative GPA",
+                "Assigned Staff",
+                "Course Name",
+                "Course Number",
+                "Section",
+                "Instructors",
+                "Dropped?",
+                "Dropped Date",
+                "Midterm Grade",
+                "Final Grade",
+                "Total Progress Reports",
+                "Absences",
+                "Unexcused Absences",
+                "Excused Absences",
+                "Credit Hours",
+                "Start Date",
+                "End Date",
+                "Start Time",
+                "End Time",
+                "Class Days",
+            ]
         ]
-    ].replace({None: np.NaN})
+        .astype(str)
+        .replace({None: np.NaN})
+    )
 
     # %%
     df
