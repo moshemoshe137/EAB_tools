@@ -22,21 +22,33 @@ RANDOM_SEEDS = [
 parent_dir = Path(__file__).parent
 
 
-def main() -> None:
+def main(
+    generate_images: bool = True,
+    generate_csvs: bool = True,
+    generate_enrollment_reports: bool = True,
+    RANDOM_SEEDS: list[float] = RANDOM_SEEDS,
+) -> None:
     """Generate all data for tests from a single script."""
-    # Generate test images
-    subprocess.run(
-        [sys.executable, "-m", "IPython", f"{parent_dir/'generate_test_images.ipynb'}"]
-    )
-
-    # Generate fake Enrollment Reports
-    generate_fake_enrollments()
-    for random_seed in RANDOM_SEEDS:
-        random_seed %= 2**32  # Maximum seed for `numpy`
-        generate_fake_enrollments(
-            int(random_seed),
-            int(np.clip(random_seed, 1, 10**6)) if random_seed > 0 else None,
+    if generate_images:
+        # Generate test images
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "IPython",
+                f"{parent_dir/'generate_test_images.ipynb'}",
+            ]
         )
+
+    if generate_csvs and generate_enrollment_reports:
+        # Generate fake Enrollment Reports
+        generate_fake_enrollments()
+        for random_seed in RANDOM_SEEDS:
+            random_seed %= 2**32  # Maximum seed for `numpy`
+            generate_fake_enrollments(
+                int(random_seed),
+                int(np.clip(random_seed, 1, 10**6)) if random_seed > 0 else None,
+            )
 
 
 if __name__ == "__main__":
