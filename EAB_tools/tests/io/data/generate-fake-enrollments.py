@@ -24,18 +24,6 @@ from EAB_tools._testing.data_generation import (
 )
 
 # %%
-locales_dict: dict[str, float] = {
-    "en_US": 90,
-    "es_MX": 5,
-    "en_CA": 2,
-    "en_GB": 1,
-    "fr_FR": 1,
-    "de_DE": 1,
-}
-fake = Faker(locales_dict)
-
-
-# %%
 _n_records = 85_253
 
 # %%
@@ -299,6 +287,17 @@ def generate_fake_enrollments(
     RANDOM_SEED: int | None = None, n_records: int | None = None
 ) -> None:
     """Generate a fake EAB v2 Enrollments Report."""
+    # %%
+    locales_dict: dict[str, float] = {
+        "en_US": 90,
+        "es_MX": 5,
+        "en_CA": 2,
+        "en_GB": 1,
+        "fr_FR": 1,
+        "de_DE": 1,
+    }
+    fake = Faker(locales_dict)
+
     _RANDOM_SEED = RANDOM_SEED if RANDOM_SEED is not None else 42
     np.random.seed(_RANDOM_SEED)  # Also sets the random seed for `pandas`
     Faker.seed(_RANDOM_SEED)
