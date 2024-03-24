@@ -22,6 +22,7 @@ import pandas as pd
 import pytest
 
 from EAB_tools._testing.types import PytestFixtureRequest
+import EAB_tools.tests.io.data.generate_all_test_data
 
 Numeric = np.number[Any]
 
@@ -35,6 +36,11 @@ enrollments_df: pd.DataFrame = pd.read_csv(_enrollments_Path, header=1)
 _generate_enrollments_path = (
     Path(__file__) / "tests" / "io" / "data" / "generate_fake_enrollments.py"
 )
+
+
+@pytest.fixture(autouse=True, scope="session")
+def generate_all_test_data() -> None:
+    EAB_tools.tests.io.data.generate_all_test_data.main()
 
 
 @pytest.fixture

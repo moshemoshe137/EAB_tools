@@ -4,8 +4,9 @@ from pathlib import Path
 import subprocess
 import sys
 
-from generate_fake_enrollments import generate_fake_enrollments
 import numpy as np
+
+from EAB_tools.tests.io.data.generate_fake_enrollments import generate_fake_enrollments
 
 RANDOM_SEEDS = [
     0,  # Zero
