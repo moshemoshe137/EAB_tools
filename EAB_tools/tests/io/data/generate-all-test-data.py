@@ -1,19 +1,19 @@
 """Generate all data for tests from a single script."""
 
+import importlib
 from pathlib import Path
 import subprocess
 import sys
 
-parent_dir = Path(__file__).parent
+import numpy as np
 
-# Generate test images
-subprocess.run(
-    [sys.executable, "-m", "IPython", f"{parent_dir / 'Generate Test Images.ipynb'}"]
-)
+# Dumb way to import script with dashes in the name
+# Basically means `from generate-fake-enrollments import generate_fake_enrollments`
+generate_fake_enrollments = importlib.import_module(
+    "generate-fake-enrollments", package="generate_fake_enrollments"
+).generate_fake_enrollments
 
-# Generate fake Enrollment Reports
-subprocess.run([sys.executable, f"{parent_dir / 'generate-fake-enrollments.py'}"])
-for random_seed in [
+RANDOM_SEEDS = [
     0,  # Zero
     28,  # Perfect number
     137,  # moshemoshe137
@@ -22,14 +22,21 @@ for random_seed in [
     525600,  # minutes
     1000000,  # dollars
     6.022e23,  # Avogadro's number
-]:
-    random_seed %= 2**32  # Maximum seed for `numpy`
-    random_seed_str = str(int(random_seed))
+]
+
+parent_dir = Path(__file__).parent
+
+if __name__ == "__main__":
+    # Generate test images
     subprocess.run(
-        [
-            sys.executable,
-            f"{parent_dir / 'generate-fake-enrollments.py'}",
-            "--random-seed",
-            random_seed_str,
-        ]
+        [sys.executable, "-m", "IPython", f"{parent_dir/'Generate Test Images.ipynb'}"]
     )
+
+    # Generate fake Enrollment Reports
+    generate_fake_enrollments()
+    for random_seed in RANDOM_SEEDS:
+        random_seed %= 2**32  # Maximum seed for `numpy`
+        generate_fake_enrollments(
+            int(random_seed),
+            int(np.clip(random_seed, 1, 10**6)) if random_seed > 0 else None,
+        )
