@@ -32,15 +32,20 @@ iris_df: pd.DataFrame = pd.read_csv(_iris_Path)
 _enrollments_Path = (
     Path(__file__).parent / "tests" / "io" / "data" / "campus-v2report-enrollment.csv"
 )
-enrollments_df: pd.DataFrame = pd.read_csv(_enrollments_Path, header=1)
+
 _generate_enrollments_path = (
     Path(__file__) / "tests" / "io" / "data" / "generate_fake_enrollments.py"
 )
+
+# Set up the type for mypy
+enrollments_df: pd.DataFrame
 
 
 @pytest.fixture(autouse=True, scope="session")
 def generate_all_test_data() -> None:
     EAB_tools.tests.io.data.generate_all_test_data.main()
+    global enrollments_df
+    enrollments_df = pd.read_csv(_enrollments_Path, header=1)
 
 
 @pytest.fixture
