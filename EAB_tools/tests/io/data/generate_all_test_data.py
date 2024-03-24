@@ -1,17 +1,11 @@
 """Generate all data for tests from a single script."""
 
-import importlib
 from pathlib import Path
 import subprocess
 import sys
 
+from generate_fake_enrollments import generate_fake_enrollments
 import numpy as np
-
-# Dumb way to import script with dashes in the name
-# Basically means `from generate-fake-enrollments import generate_fake_enrollments`
-generate_fake_enrollments = importlib.import_module(
-    "generate-fake-enrollments", package="generate_fake_enrollments"
-).generate_fake_enrollments
 
 RANDOM_SEEDS = [
     0,  # Zero
@@ -31,7 +25,7 @@ def main() -> None:
     """Generate all data for tests from a single script."""
     # Generate test images
     subprocess.run(
-        [sys.executable, "-m", "IPython", f"{parent_dir/'Generate Test Images.ipynb'}"]
+        [sys.executable, "-m", "IPython", f"{parent_dir/'generate_test_images.ipynb'}"]
     )
 
     # Generate fake Enrollment Reports

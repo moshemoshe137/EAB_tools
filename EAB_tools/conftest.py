@@ -33,7 +33,7 @@ _enrollments_Path = (
 )
 enrollments_df: pd.DataFrame = pd.read_csv(_enrollments_Path, header=1)
 _generate_enrollments_path = (
-    Path(__file__) / "tests" / "io" / "data" / "generate-fake-enrollments.ipynb"
+    Path(__file__) / "tests" / "io" / "data" / "generate_fake_enrollments.py"
 )
 
 
