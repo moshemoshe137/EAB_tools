@@ -1,15 +1,14 @@
 from pathlib import Path
+import shutil
 
 import pandas as pd
+import pytest
 
-from EAB_tools import load_enrollments_report
+from EAB_tools import (
+    load_all_enrollment_reports,
+    load_enrollments_report,
+)
 from EAB_tools.io.enrollment import enrollments_report_date
-
-
-def test_generate_new_enrollments_report_fixture(
-    generate_new_enrollments_report: pd.DataFrame,
-) -> None:
-    pass
 
 
 def test_enrollments_report_fixture(enrollments_report: pd.DataFrame) -> None:
@@ -70,3 +69,21 @@ def test_enrollments_report_date(
         enrollments_report_date(enrollments_report_path)
         == enrollments_df["Report Date"]
     ).all()
+
+
+@pytest.mark.parametrize("ignore_index", [True, False])
+class TestLoadAllEnrollmentReports:
+    @pytest.mark.slow
+    def test_load_all_enrollment_reports(
+        self, data_dir: Path, ignore_index: bool
+    ) -> None:
+        load_all_enrollment_reports(data_dir, ignore_index=ignore_index)
+
+    def test_load_all_enrollments_quicker(
+        self, data_dir: Path, tmp_path: Path, ignore_index: bool
+    ) -> None:
+        for file in data_dir.glob("*.csv"):
+            if file.stat().st_size < 50 * 1024 * 1024:  # 50 MB
+                shutil.copy2(file, tmp_path)
+
+        load_all_enrollment_reports(tmp_path, ignore_index=ignore_index)

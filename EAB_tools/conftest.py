@@ -41,6 +41,11 @@ _generate_enrollments_path = (
 enrollments_df: pd.DataFrame
 
 
+@pytest.fixture
+def data_dir() -> Path:
+    return _iris_Path.parent
+
+
 @pytest.fixture(autouse=True, scope="session")
 def generate_all_test_data() -> None:
     data_dir = _generate_enrollments_path.parent
