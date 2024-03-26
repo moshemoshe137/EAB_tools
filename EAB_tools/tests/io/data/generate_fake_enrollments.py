@@ -306,6 +306,8 @@ def generate_fake_enrollments(
     specified_n_records = n_records is not None
     n_records = n_records if specified_n_records else _n_records
     assert n_records is not None  # for mypy
+    # Generate some buffer rows to account for dropped duplicates
+    buffer_n_records = int(n_records * (2 if n_records < 1000 else 1.5))
 
     # %%
     avg_sections_per_course = EV(sections_per_course_distribution)
@@ -318,7 +320,7 @@ def generate_fake_enrollments(
     # %%
     # Calculate the number of unique students based on the average number of courses per
     # student
-    n_unique_students = int(n_records / avg_courses_per_student)
+    n_unique_students = int(np.ceil(buffer_n_records / avg_courses_per_student))
 
     majors = (
         "Accounting,Anthropology,Biochemistry,Biological Sciences"
@@ -397,10 +399,11 @@ def generate_fake_enrollments(
     existing_ids = pd.concat([existing_ids, staff_df["id"]])
 
     # %%
-    num_courses_per_student = sample_from_dict(
-        num_courses_per_student_distribution, size=n_unique_students
-    )
-
+    num_courses_per_student = pd.Series()
+    while sum(num_courses_per_student) < buffer_n_records:
+        num_courses_per_student = sample_from_dict(
+            num_courses_per_student_distribution, size=n_unique_students
+        )
     # %%
     # Replicate each student entry based on the number of courses they're taking
     replicated_students = unique_students.loc[
@@ -411,7 +414,7 @@ def generate_fake_enrollments(
     # Course info
     # Generate a course schedule to assign students courses
     n_course_numbers_needed = np.ceil(
-        n_records / avg_students_per_section / avg_sections_per_course
+        buffer_n_records / avg_students_per_section / avg_sections_per_course
     ).astype(int)
 
     n_instructors_needed = np.ceil(
