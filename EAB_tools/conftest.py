@@ -21,8 +21,8 @@ import numpy.typing as npt
 import pandas as pd
 import pytest
 
+import EAB_tools._testing.test_scripts.generate_all_test_data
 from EAB_tools._testing.types import PytestFixtureRequest
-import EAB_tools.tests.io.data.generate_all_test_data
 
 Numeric = np.number[Any]
 
@@ -50,7 +50,7 @@ def data_dir() -> Path:
 def generate_all_test_data() -> None:
     data_dir = _generate_enrollments_path.parent
     enrollments_glob = list(data_dir.glob("campus-v2report-enrollment*.csv"))
-    EAB_tools.tests.io.data.generate_all_test_data.main(
+    EAB_tools._testing.test_scripts.generate_all_test_data.main(
         generate_enrollment_reports=len(enrollments_glob) < 2
     )
 

@@ -736,7 +736,7 @@ def generate_fake_enrollments(
 
     # %%
     # Create DataFrame
-    # and ensure that the dataframe is not longer than `n_records`
+    # and ensure that the DataFrame is not longer than `n_records`
     df_unordered_columns = replicated_students.iloc[:n_records]
 
     # Order the columns as expected:

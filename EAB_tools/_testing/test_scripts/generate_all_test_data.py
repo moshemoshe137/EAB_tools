@@ -6,7 +6,9 @@ import sys
 
 import numpy as np
 
-from EAB_tools.tests.io.data.generate_fake_enrollments import generate_fake_enrollments
+from EAB_tools._testing.test_scripts.generate_fake_enrollments import (
+    generate_fake_enrollments,
+)
 
 RANDOM_SEEDS = [
     0,  # Zero
