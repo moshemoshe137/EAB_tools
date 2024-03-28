@@ -29,7 +29,7 @@ dynamic = ["version", "dependencies"]  # Defined in setup.py
 "Bug Tracker" = "https://github.com/moshemoshe137/EAB_tools/issues"
 
 [tool.black]
-target-version = ["py39", "py310", "py311"]
+target-version = ["py39", "py310", "py311", "py312"]
 
 [tool.flake8]
 count = true
