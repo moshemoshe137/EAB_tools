@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run pre-commit tests and lint
 # with a variety of Python versions
 
-name: Pre-Commit Tests - All OSes - Python 3.9, 3.10, 3.11
+name: Pre-Commit Tests - All OSes - Python 3.9, 3.10, 3.11, 3.12
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
