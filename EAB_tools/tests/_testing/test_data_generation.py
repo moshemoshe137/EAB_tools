@@ -1,6 +1,9 @@
 from __future__ import annotations  # for Python 3.9
 
+from pathlib import Path
 import random
+import subprocess
+import sys
 
 from faker import Faker
 import numpy as np
@@ -17,6 +20,9 @@ from EAB_tools._testing.data_generation import (
     select_assigned_staff,
     select_categories,
     select_tags,
+)
+from EAB_tools._testing.test_scripts.generate_fake_enrollments import (
+    generate_fake_enrollments,
 )
 
 seeds = [0, 1, 987_654_321]
@@ -237,3 +243,43 @@ class TestDataGeneration:
         )
         staff = select_assigned_staff(staff_df, self.assigned_staff_role_probabilities)
         assert staff[0] == expected[set_random_seed]
+
+
+class TestReportGeneration:
+    def test_generate_fake_enrollments(self, set_random_seed: int) -> None:
+        # Base `n_records` on the seed
+        n_records = set_random_seed + 1000
+        n_records %= 10**5  # But cap it at 10,000 records
+
+        generate_fake_enrollments(RANDOM_SEED=set_random_seed, n_records=n_records)
+
+    @pytest.mark.parametrize(
+        "random_seed_flag", ["-r", "--random-seed"], ids=" {} ".format
+    )
+    @pytest.mark.parametrize("n_records_flag", ["-n", "--n-records"], ids=" {} ".format)
+    def test_generate_fake_enrollments_cli(
+        self, set_random_seed: int, random_seed_flag: str, n_records_flag: str
+    ) -> None:
+        # Base `n_records` on the seed
+        n_records = set_random_seed + 1000
+        n_records %= 10**5  # But cap it at 10,000 records
+
+        script_location = (
+            Path(__file__)
+            / "../../.."
+            / "_testing"
+            / "test_scripts"
+            / "generate_fake_enrollments.py"
+        )
+        subprocess.run(
+            [
+                sys.executable,
+                # r"EAB_tools\tests\_testing\test_data_generation.py",
+                script_location,
+                random_seed_flag,
+                str(set_random_seed),
+                n_records_flag,
+                str(n_records),
+            ],
+            check=True,
+        )

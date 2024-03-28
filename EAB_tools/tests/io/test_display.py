@@ -1,7 +1,6 @@
 # pylint: disable=C0114, C0116
 from collections.abc import Sequence
 import itertools
-import os
 from pathlib import Path
 import re
 from typing import (
@@ -29,12 +28,6 @@ try:
     _HAS_OPENPYXL = True
 except ImportError:
     _HAS_OPENPYXL = False
-
-
-@pytest.fixture(autouse=True)
-def _init(tmp_path: Path) -> None:
-    """Autouse fixture to chdir to tmp_path for all tests in this file."""
-    os.chdir(tmp_path)
 
 
 SaveImageTrueParam = pytest.param(True, marks=pytest.mark.slow)

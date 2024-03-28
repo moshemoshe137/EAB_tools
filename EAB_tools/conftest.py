@@ -41,6 +41,12 @@ _generate_enrollments_path = (
 enrollments_df: pd.DataFrame
 
 
+@pytest.fixture(autouse=True)
+def _init_tmp_path(tmp_path: Path) -> None:
+    """Autouse fixture to chdir to tmp_path for all tests."""
+    os.chdir(tmp_path)
+
+
 @pytest.fixture
 def data_dir() -> Path:
     return _iris_Path.parent
