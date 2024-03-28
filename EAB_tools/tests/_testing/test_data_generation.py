@@ -265,12 +265,13 @@ class TestReportGeneration:
         n_records %= 10**5  # But cap it at 10,000 records
 
         script_location = (
-            Path(__file__)
-            / "../../.."
+            Path(__file__).parent
+            / "../.."
             / "_testing"
             / "test_scripts"
             / "generate_fake_enrollments.py"
-        )
+        ).resolve()
+        assert script_location.exists()
         subprocess.run(
             [
                 sys.executable,
