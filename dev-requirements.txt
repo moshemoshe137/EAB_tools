@@ -6,6 +6,7 @@ pytest-random-order
 
 # Additional functionality
 openpyxl
+xlrd
 
 # Code checks
 black == 24.1.0
@@ -23,6 +24,12 @@ pydocstyle
 types-atomicwrites
 types-python-dateutil
 types-setuptools
+
+# Generate fake data
+Faker >= 23.2.0
+
+# Work with Jupyter Notebooks
+notebook
 
 # Silence `pandas` DeprecationWarning
 # and maybe adds a performance boost too? Unclear

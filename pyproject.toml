@@ -24,6 +24,9 @@ classifiers = [
 ]
 dynamic = ["version", "dependencies"]  # Defined in setup.py
 
+[project.optional-dependencies]
+progress_bar = ['tqdm']
+
 [project.urls]
 "Homepage" = "https://github.com/moshemoshe137/EAB_tools"
 "Bug Tracker" = "https://github.com/moshemoshe137/EAB_tools/issues"

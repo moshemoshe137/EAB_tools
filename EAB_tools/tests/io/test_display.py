@@ -1,8 +1,6 @@
 # pylint: disable=C0114, C0116
 from collections.abc import Sequence
-from contextlib import nullcontext as does_not_raise
 import itertools
-import os
 from pathlib import Path
 import re
 from typing import (
@@ -30,11 +28,6 @@ try:
     _HAS_OPENPYXL = True
 except ImportError:
     _HAS_OPENPYXL = False
-
-
-@pytest.fixture(autouse=True)
-def _init(tmp_path: Path) -> None:
-    os.chdir(tmp_path)
 
 
 SaveImageTrueParam = pytest.param(True, marks=pytest.mark.slow)
@@ -151,7 +144,7 @@ class TestDisplayAndSaveDf:
         if pd.api.types.is_string_dtype(col):
             context: ContextManager[Optional[object]] = pytest.raises(ValueError)
         else:
-            context = does_not_raise()
+            context = tm.does_not_raise()
         with context:
             # str columns with incorrect format code should
             # throw a ValueError
@@ -337,7 +330,7 @@ class TestDisplayAndSaveDf:
                 ValueError, match="could not convert string to float"
             )
         else:
-            context = does_not_raise()
+            context = tm.does_not_raise()
 
         with context:
             styler = display_and_save_df(
