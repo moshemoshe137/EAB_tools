@@ -134,7 +134,7 @@ def _to_excel(
                 else []
             )
             try:
-                if isinstance(bar_subset, [list, tuple]):
+                if isinstance(bar_subset, (list, tuple)) and len(bar_subset) > 1:
                     # If `bar_subset` is a tuple, then it's
                     # (rows, cols)
                     bar_subset = bar_subset[1]
