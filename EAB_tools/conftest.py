@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import (
+    Callable,
     Iterable,
     Iterator,
 )
@@ -9,9 +12,7 @@ import shutil
 import subprocess
 from typing import (
     Any,
-    Callable,
     Literal,
-    Union,
 )
 
 import dateutil.tz
@@ -87,7 +88,7 @@ def iris_cols(request: PytestFixtureRequest) -> pd.Series:
 )
 def iris_single_col_subset(
     iris_cols: pd.Series, request: PytestFixtureRequest
-) -> Union[str, pd.Index]:
+) -> str | pd.Index:
     """Return a col name as a str or pd.Index"""
     func = request.param
     col = iris_cols.name
@@ -223,7 +224,7 @@ def _fig_or_ax(request: PytestFixtureRequest) -> Literal["fig", "ax"]:
 def mpl_plots(
     func: Callable[[npt.ArrayLike], npt.NDArray[Numeric]],
     x_values: npt.NDArray[Numeric],
-) -> Iterable[dict[str, Union[plt.Figure, plt.Axes]]]:
+) -> Iterable[dict[str, plt.Figure | plt.Axes]]:
     """Returns dict of {fix, ax}, for various funcs and domains"""
     x = x_values
     y = func(x)
@@ -235,14 +236,14 @@ def mpl_plots(
 
 
 @pytest.fixture
-def mpl_axes(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Axes:
+def mpl_axes(mpl_plots: dict[str, plt.Figure | plt.Axes]) -> plt.Axes:
     """Returns a variety of `plt.Axes` objects"""
     assert isinstance(mpl_plots["ax"], plt.Axes)  # for mypy
     return mpl_plots["ax"]
 
 
 @pytest.fixture
-def mpl_figs(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Figure:
+def mpl_figs(mpl_plots: dict[str, plt.Figure | plt.Axes]) -> plt.Figure:
     """Returns a variety of `plt.Figure` objects"""
     assert isinstance(mpl_plots["fig"], plt.Figure)  # for mypy
     return mpl_plots["fig"]
@@ -250,8 +251,8 @@ def mpl_figs(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Figure:
 
 @pytest.fixture
 def mpl_figs_and_axes(
-    mpl_plots: dict[str, Union[plt.Figure, plt.Axes]], _fig_or_ax: Literal["fig", "ax"]
-) -> Union[plt.Figure, plt.Axes]:
+    mpl_plots: dict[str, plt.Figure | plt.Axes], _fig_or_ax: Literal["fig", "ax"]
+) -> plt.Figure | plt.Axes:
     """Returns either the figure or the axis of various plots"""
     return mpl_plots[_fig_or_ax]
 

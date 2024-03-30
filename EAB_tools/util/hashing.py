@@ -1,11 +1,9 @@
 """Utilities for hashing objects."""
 
+from __future__ import annotations
+
 import hashlib
-from typing import (
-    Optional,
-    Union,
-    cast,
-)
+from typing import cast
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import matplotlib.pyplot as plt
@@ -17,9 +15,9 @@ from EAB_tools.eab_rc import eab_rc
 
 
 def hash_df(
-    df: Union[pd.DataFrame, pd.Series, pd.Index, pd.MultiIndex],
-    styler: Optional[pd.io.formats.style.Styler] = None,
-    max_len: Optional[int] = eab_rc["hash_len"],
+    df: pd.DataFrame | pd.Series | pd.Index | pd.MultiIndex,
+    styler: pd.io.formats.style.Styler | None = None,
+    max_len: int | None = eab_rc["hash_len"],
     usedforsecurity: bool = False,
 ) -> str:
     """
@@ -66,8 +64,8 @@ def hash_df(
 
 
 def hash_mpl_fig(
-    fig: Union[plt.Figure, plt.Axes],
-    max_len: Optional[int] = eab_rc["hash_len"],
+    fig: plt.Figure | plt.Axes,
+    max_len: int | None = eab_rc["hash_len"],
     usedforsecurity: bool = False,
 ) -> str:
     """Hash a matplotlib figure."""

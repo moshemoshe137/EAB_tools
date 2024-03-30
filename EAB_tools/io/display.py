@@ -1,12 +1,10 @@
 """Methods to display and save DataFrames, plots."""
 
+from __future__ import annotations
+
 from collections.abc import Sequence
 from pathlib import Path
-from typing import (
-    Any,
-    Optional,
-    Union,
-)
+from typing import Any
 import warnings
 
 from IPython.display import display
@@ -14,6 +12,7 @@ from IPython.display import display
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", DeprecationWarning)
     import dataframe_image as dfi  # noqa
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,14 +44,14 @@ def _to_excel(
     df: pd.DataFrame,
     styler: Styler,
     excel_output: Path,
-    sheet_name: Optional[PathLike],
-    percentage_format_subset: Optional[Union[Subset, str]],
-    thousands_format_subset: Optional[Union[Subset, str]],
-    bar_subset: Optional[Union[Subset, str]],
+    sheet_name: PathLike | None,
+    percentage_format_subset: Subset | str | None,
+    thousands_format_subset: Subset | str | None,
+    bar_subset: Subset | str | None,
     date_format: str,
     percentage_format_precision: int,
-    bar_vmin: Optional[float],
-    bar_vmax: Optional[float],
+    bar_vmin: float | None,
+    bar_vmax: float | None,
 ) -> None:
     """Export DataFrame to Excel. Used as a helper function to display_and_save_df."""
     try:
@@ -190,35 +189,35 @@ def _to_excel(
 
 
 def display_and_save_df(
-    df: Union[pd.DataFrame, pd.Series, Styler],
-    caption: Optional[str] = None,
-    filename: Optional[PathLike] = None,
+    df: pd.DataFrame | pd.Series | Styler,
+    caption: str | None = None,
+    filename: PathLike | None = None,
     large_title: bool = True,
     large_col_names: bool = True,
     cell_borders: bool = True,
     highlight_total_row: bool = False,
     border_width: str = "1px",
-    thousands_format_subset: Optional[Union[Subset, str]] = "auto",
-    date_format_subset: Optional[Union[Subset, str]] = "auto",
+    thousands_format_subset: Subset | str | None = "auto",
+    date_format_subset: Subset | str | None = "auto",
     date_format: str = "%#m/%#d/%Y",
-    percentage_format_subset: Optional[Union[Subset, str]] = "auto",
+    percentage_format_subset: Subset | str | None = "auto",
     percentage_format_precision: int = 1,
-    float_format_subset: Optional[Union[Subset, str]] = "auto",
+    float_format_subset: Subset | str | None = "auto",
     float_format_precision: int = 1,
     hide_index: bool = False,
     convert_dtypes: bool = True,
-    ryg_bg_subset: Optional[Union[Subset, str]] = None,
-    ryg_bg_vmin: Optional[float] = None,
-    ryg_bg_vmax: Optional[float] = None,
-    gyr_bg_subset: Optional[Union[Subset, str]] = None,
-    gyr_bg_vmin: Optional[float] = None,
-    gyr_bg_vmax: Optional[float] = None,
-    bar_subset: Optional[Union[Subset, str]] = None,
-    bar_vmin: Optional[float] = None,
-    bar_vmax: Optional[float] = None,
-    format_kwargs: Optional[Sequence[dict[str, Any]]] = None,
-    background_gradient_kwargs: Optional[Sequence[dict[str, Any]]] = None,
-    bar_kwargs: Optional[Sequence[dict[str, Any]]] = None,
+    ryg_bg_subset: Subset | str | None = None,
+    ryg_bg_vmin: float | None = None,
+    ryg_bg_vmax: float | None = None,
+    gyr_bg_subset: Subset | str | None = None,
+    gyr_bg_vmin: float | None = None,
+    gyr_bg_vmax: float | None = None,
+    bar_subset: Subset | str | None = None,
+    bar_vmin: float | None = None,
+    bar_vmax: float | None = None,
+    format_kwargs: Sequence[dict[str, Any]] | None = None,
+    background_gradient_kwargs: Sequence[dict[str, Any]] | None = None,
+    bar_kwargs: Sequence[dict[str, Any]] | None = None,
     save_excel: bool = False,
     excel_path: PathLike = "output.xlsx",
     save_image: bool = False,
@@ -584,8 +583,8 @@ def display_and_save_df(
 
 
 def display_and_save_fig(
-    fig: Union[plt.Figure, plt.Axes],
-    filename: Optional[str] = None,
+    fig: plt.Figure | plt.Axes,
+    filename: str | None = None,
     save_image: bool = False,
 ) -> None:
     """
