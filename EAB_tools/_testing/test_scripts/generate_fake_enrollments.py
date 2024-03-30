@@ -782,6 +782,7 @@ def generate_fake_enrollments(
 
     # %%
     d = Path(EAB_tools.__file__).parent / "tests" / "io" / "data"
+    d.mkdir(exist_ok=True)
     p = d / (
         "campus-v2report-enrollment"
         + (f"-{_RANDOM_SEED}" if RANDOM_SEED is not None else "")
