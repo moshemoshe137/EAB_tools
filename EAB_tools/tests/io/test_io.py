@@ -9,6 +9,19 @@ import pytest
 from EAB_tools import load_df
 import EAB_tools._testing as tm
 
+try:
+    import xlrd  # noqa: F401 # 'xlrd' imported but unused
+
+    _HAS_XLRD = True
+except ImportError:
+    _HAS_XLRD = False
+try:
+    import openpyxl  # noqa: F401 # 'openpyxl' imported but unused
+
+    _HAS_OPENPYXL = True
+except ImportError:
+    _HAS_OPENPYXL = False
+
 
 def all_mixups(file_extension: str) -> list[str]:
     """
@@ -41,11 +54,27 @@ class TestLoadDf:
     data_dir = Path(__file__).parent / "data"
     files = list(data_dir.glob("iris*"))
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    # Mark files with `pytest` `param`s
+    files_with_marks = []
+    for file in files:
+        if "xlsx" in file.suffix.casefold():
+            param = pytest.param(
+                file,
+                marks=pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl required"),
+            )
+        elif "xls" in file.suffix.casefold():
+            param = pytest.param(
+                file, marks=pytest.mark.skipif(not _HAS_XLRD, reason="xlrd required")
+            )
+        else:
+            param = pytest.param(file)
+        files_with_marks.append(param)
+
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     def test_doesnt_fail(self, cache: bool, file: tm.PathLike) -> None:
         load_df(file, cache=cache)
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     def test_load_iris(
         self, file: tm.PathLike, iris: pd.DataFrame, cache: bool
     ) -> None:
@@ -53,11 +82,12 @@ class TestLoadDf:
 
         assert (df == iris).all(axis=None)
 
+    # For tests that need both the file and its potential marks
     @pytest.mark.parametrize(
-        "file,file_type_specification",
+        "file, file_type_specification",
         [
-            (file, suffix_specification)
-            for file in files
+            pytest.param(file, suffix_specification, marks=file_with_marks.marks)
+            for file, file_with_marks in zip(files, files_with_marks)
             for suffix_specification in all_mixups(file.suffix)
         ],
         ids=str,
@@ -79,7 +109,7 @@ class TestLoadDf:
         # Clean up
         weird_file.unlink()
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     @pytest.mark.parametrize(
         "pkl_name",
         [
@@ -108,6 +138,7 @@ class TestLoadDf:
         assert (Path(file).parent / ".eab_tools_cache" / pkl_name).exists()
 
     @pytest.mark.parametrize("sn", ["spam", "eggs", "spam&eggs", "iris", None])
+    @pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl required")
     def test_multiple_excel_sheets(self, cache: bool, sn: str) -> None:
         file = self.data_dir / "multiple_sheets.xlsx"
 
@@ -121,7 +152,7 @@ class TestLoadDf:
         with context:
             load_df(file, cache=cache, sheet_name=sn)
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     @pytest.mark.parametrize("bad_file_type", [".db", "gsheets", "exe", ".PY"])
     def test_bad_filetype(
         self, file: tm.PathLike, cache: bool, bad_file_type: str
@@ -130,7 +161,7 @@ class TestLoadDf:
         with pytest.raises(ValueError, match=msg):
             load_df(file, cache=cache, file_type=bad_file_type)
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     @pytest.mark.parametrize("ambiguous_suffix", [".csv.xlsx", ".xlsx.csv"])
     def test_ambiguous_filetype(
         self, file: tm.PathLike, cache: bool, ambiguous_suffix: str
@@ -140,13 +171,19 @@ class TestLoadDf:
         with pytest.raises(ValueError, match=msg):
             load_df(f"{file.name}{ambiguous_suffix}", cache=cache, file_type="detect")
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     def test_wrong_filetype(self, file: tm.PathLike, cache: bool) -> None:
         file = Path(file)
         my_file_type = file.suffix.casefold().replace(".", "")
         wrong_file_types = [
             suffix for suffix in ["csv", "xls", "xlsx"] if suffix not in my_file_type
         ]
+        if not _HAS_XLRD and "xls" in wrong_file_types:
+            # `xlrd` is required for .xls files
+            wrong_file_types.remove("xls")
+        if not _HAS_OPENPYXL and "xlsx" in wrong_file_types:
+            # `openpyxl` is required for .xlsx files
+            wrong_file_types.remove("xlsx")
 
         msg = r"""(?xi)
         can't\ decode\ byte  # UnicodeDecodeError
@@ -158,7 +195,7 @@ class TestLoadDf:
             with pytest.raises(Exception, match=msg):
                 load_df(file, cache=cache, file_type=wrong_file_type)
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     def test_load_df_cache(
         self, file: tm.PathLike, cache: bool, capsys: CaptureFixture[str]
     ) -> None:
