@@ -1,10 +1,9 @@
 """Methods to load data from disk."""
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import (
-    Any,
-    Optional,
-)
+from typing import Any
 
 import pandas as pd
 
@@ -15,7 +14,7 @@ def load_df(
     filepath: PathLike,
     file_type: str = "detect",
     cache: bool = True,
-    pkl_name: Optional[PathLike] = None,
+    pkl_name: PathLike | None = None,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """
