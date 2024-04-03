@@ -8,7 +8,7 @@ exclude: |
   )
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-added-large-files  # Prevent giant files from being committed.
       - id: check-ast  # Simply check whether files parse as valid python.
@@ -29,20 +29,23 @@ repos:
       - id: trailing-whitespace  # Trims trailing whitespace.
 
   - repo: https://github.com/psf/black
-    rev: 22.12.0
+    rev: 24.1.0
     hooks:
       - id: black-jupyter
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
+    rev: 7.0.0
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-bugbear==22.12.6
-          - flake8-comprehensions==3.10.1
+          - flake8-bugbear==24.1.17
+          - flake8-comprehensions==3.14.0
+          - Flake8-pyproject==1.2.3
+        args:
+          - '--extend-ignore=E203'
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
         name: isort (python)
@@ -58,14 +61,14 @@ repos:
           - python
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         args:
           - --py39-plus
 
   - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.2.2
+    rev: 6.3.0
     hooks:
       - id: pydocstyle
         additional_dependencies:
@@ -91,29 +94,32 @@ repos:
           - --keep-count
 
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.6.0
+    rev: 1.7.1
     hooks:
       - id: nbqa-check-ast
       - id: nbqa-flake8
         additional_dependencies:
-          - flake8==6.0.0
-          - flake8-bugbear==22.12.6
-          - flake8-comprehensions==3.10.1
+          - flake8==7.0.0
+          - flake8-bugbear==24.1.17
+          - flake8-comprehensions==3.14.0
+          - Flake8-pyproject==1.2.3
         args:
-          - '--extend-ignore=E402'  # module level import not at top of file
+          - '--extend-ignore=E203,E402'
       - id: nbqa-isort
         additional_dependencies:
-          - isort==5.12.0
+          - isort==5.13.2
       - id: nbqa-mypy
         additional_dependencies:
-          - mypy==0.991
+          - mypy==1.7.0
+          - matplotlib  # for its type hints
+        exclude: \.py$
       - id: nbqa-pyupgrade
         additional_dependencies:
-          - pyupgrade==v3.3.1
+          - pyupgrade==v3.15.0
         args:
           - --py39-plus  # Synchronize with args in regular hook
   - repo: https://github.com/python-jsonschema/check-jsonschema.git
-    rev: 0.20.0
+    rev: 0.27.3
     hooks:
       - id: check-github-actions
       - id: check-github-workflows

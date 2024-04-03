@@ -1,29 +1,74 @@
+from __future__ import annotations
+
 from collections.abc import (
+    Callable,
     Iterable,
     Iterator,
 )
 import itertools
 import os
 from pathlib import Path
+import shutil
+import subprocess
 from typing import (
     Any,
-    Callable,
     Literal,
-    Union,
 )
 
-from _pytest.fixtures import SubRequest as PytestFixtureRequest
 import dateutil.tz
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from pandas._testing import makeDateIndex
 import pytest
+
+import EAB_tools._testing.test_scripts.generate_all_test_data
+from EAB_tools._testing.types import PytestFixtureRequest
 
 Numeric = np.number[Any]
 
-iris_df: pd.DataFrame = pd.read_csv(Path(__file__).parent / "tests/io/data/iris.csv")
+_iris_Path = Path(__file__).parent / "tests" / "io" / "data" / "iris.csv"
+iris_df: pd.DataFrame = pd.read_csv(_iris_Path)
+
+_enrollments_Path = (
+    Path(__file__).parent / "tests" / "io" / "data" / "campus-v2report-enrollment.csv"
+)
+
+_generate_enrollments_path = (
+    Path(__file__).parent / "tests" / "io" / "data" / "generate_fake_enrollments.py"
+)
+
+# Set up the type for mypy
+enrollments_df: pd.DataFrame
+
+
+@pytest.fixture(autouse=True)
+def _init_tmp_path(tmp_path: Path) -> None:
+    """Autouse fixture to chdir to tmp_path for all tests."""
+    os.chdir(tmp_path)
+
+
+@pytest.fixture
+def data_dir() -> Path:
+    return _iris_Path.parent
+
+
+@pytest.fixture(autouse=True, scope="session")
+def generate_all_test_data() -> None:
+    data_dir = _generate_enrollments_path.parent
+    enrollments_glob = list(data_dir.glob("campus-v2report-enrollment*.csv"))
+    EAB_tools._testing.test_scripts.generate_all_test_data.main(
+        generate_enrollment_reports=len(enrollments_glob) < 2
+    )
+
+    global enrollments_df
+    enrollments_df = pd.read_csv(_enrollments_Path, header=1)
+
+
+@pytest.fixture
+def iris_path() -> Path:
+    """pathlib Path object of absolute path to iris CSV file."""
+    return _iris_Path.resolve()
 
 
 @pytest.fixture
@@ -43,11 +88,58 @@ def iris_cols(request: PytestFixtureRequest) -> pd.Series:
 )
 def iris_single_col_subset(
     iris_cols: pd.Series, request: PytestFixtureRequest
-) -> Union[str, pd.Index]:
+) -> str | pd.Index:
     """Return a col name as a str or pd.Index"""
     func = request.param
     col = iris_cols.name
     return func(col)
+
+
+@pytest.fixture
+def enrollments_report_path() -> Path:
+    return _enrollments_Path.resolve()
+
+
+@pytest.fixture
+def enrollments_report() -> pd.DataFrame:
+    return enrollments_df
+
+
+@pytest.fixture
+def generate_new_enrollments_report() -> pd.DataFrame:
+    global enrollments_df
+    subprocess.run(["ipython", str(_generate_enrollments_path)])
+    enrollments_df = pd.read_csv(_enrollments_Path, header=1)
+    return enrollments_df
+
+
+@pytest.fixture
+def different_enrollments_report(tmp_path: Path) -> pd.DataFrame:
+    sample_enrollments_report = """Example University,Student Enrollments,,03/10/2024 20:30:00,Moshe Rubin
+
+Student Name,Student E-mail,Student ID,Student Alternate ID,Categories,Tags,Classification,Major,Cumulative GPA,Assigned Staff,Course Name,Course Number,Section,Instructors,Dropped?,Dropped Date,Midterm Grade,Final Grade,Total Progress Reports,Absences,Unexcused Absences,Excused Absences,Credit Hours,Start Date,End Date,Start Time,End Time,Class Days
+"Hudson, Susan",susan.hudson@example.edu,ID232237800,,"Graduated: No, Undergraduate, Completion Rate: >= 66.67%, Start Term: Fall 2021, Term Status: Registered, FAFSA: No",,Graduate (Winter 2024),Journalism,0.0,"Curtis Evans (Advisor), Donald Roberts (Career Advisor), Joshua King (Professor), Tina Pena (Professor)",Customer dream pattern police leave,MED-371,56477,"Grant, Monique (ID738164466) <monique.grant@example.edu>; King, Joshua (ID509560200) <joshua.king2@example.edu>",Yes,2023-05-19,B,F,0,5,5,0,5,2024-04-25,2024-07-04,10:30 AM CT,2:30 PM CT,TR
+"Hudson, Susan",susan.hudson@example.edu,ID232237800,,"Graduated: No, Undergraduate, Completion Rate: >= 66.67%, Start Term: Fall 2021, Term Status: Registered, FAFSA: No",,Graduate (Winter 2024),Journalism,0.0,"Curtis Evans (Advisor), Donald Roberts (Career Advisor), Joshua King (Professor), Tina Pena (Professor)",Truth indicate wait act nearly form,STT-557,10891,"Pena, Tina (ID230553056) <tina.pena@example.edu>",Yes,2024-03-02,D,A,1,3,3,0,5,2024-01-16,2024-03-26,1:00 PM CT,2:15 PM CT,MW
+"Hudson, Susan",susan.hudson@example.edu,ID232237800,,"Graduated: No, Undergraduate, Completion Rate: >= 66.67%, Start Term: Fall 2021, Term Status: Registered, FAFSA: No",,Graduate (Winter 2024),Journalism,0.0,"Curtis Evans (Advisor), Donald Roberts (Career Advisor), Joshua King (Professor), Tina Pena (Professor)",Success operation television treat together change,ENG-389,99535,"Gumprich, Gustav (ID420086633) <gustav.gumprich@example.edu>",Yes,2023-09-20,D,C,1,2,2,0,5,2024-06-05,2024-08-14,9:00 AM CT,12:00 PM CT,W
+"Huff, Amanda",amanda.huff@example.edu,ID252221822,,"On-line, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Fall 2023, Term Status: Registered, FAFSA: No",,,English Literature,0.32,"Brandi Hurley (Professor), Frank Rivera (Advisor), Jason Navarro (FAFSA coordinator), Nicole Bennett (Career Advisor)",Us cut job discuss garden activity force safe,OPH-400,35682,"Hurley, Brandi (ID332794299) <brandi.hurley@example.edu>",Yes,2023-04-25,A,D,0,2,2,0,5,2024-03-22,2024-05-31,2:00 PM CT,5:00 PM CT,T
+"Huff, Amanda",amanda.huff@example.edu,ID252221822,,"On-line, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Fall 2023, Term Status: Registered, FAFSA: No",,,English Literature,0.32,"Brandi Hurley (Professor), Frank Rivera (Advisor), Jason Navarro (FAFSA coordinator), Nicole Bennett (Career Advisor)",Spend these short,ART-595,38939,"Meunier, Hortense (ID652184974) <hortense.meunier@example.edu>",No,,B,D,0,5,5,0,5,2024-02-03,2024-04-13,9:00 AM CT,10:15 AM CT,MWF
+"Douglas, Tracey",tracey.douglas@example.edu,ID711775411,,"Main Campus, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Spring 2022, Term Status: Registered, FAFSA: No",,Foo (Winter 2024),Graphic Design,3.28,"Randall Morgan (Career Advisor), Ryan Stone (FAFSA coordinator), Scott Williams (Advisor)",Exactly line friend word only,URB-175,35709,"Clark, Jessica (ID505531377) <jessica.clark2@example.edu>",Yes,2023-07-01,D,A,0,0,2,0,3,2024-05-30,2024-08-08,9:00 AM CT,12:00 PM CT,TR
+"Douglas, Tracey",tracey.douglas@example.edu,ID711775411,,"Main Campus, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Spring 2022, Term Status: Registered, FAFSA: No",,Foo (Winter 2024),Graphic Design,3.28,"Randall Morgan (Career Advisor), Ryan Stone (FAFSA coordinator), Scott Williams (Advisor)",Bed close let see today case,PTH-132,76443,"Smith, Tammy (ID710839343) <tammy.smith2@example.edu>",Yes,2023-12-07,A,C,1,6,6,0,3,2024-03-01,2024-05-10,3:00 PM CT,9:00 PM CT,MW
+"Douglas, Tracey",tracey.douglas@example.edu,ID711775411,,"Main Campus, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Spring 2022, Term Status: Registered, FAFSA: No",,Foo (Winter 2024),Graphic Design,3.28,"Randall Morgan (Career Advisor), Ryan Stone (FAFSA coordinator), Scott Williams (Advisor)",Feeling room half sing improve,URB-333,80092,"Christian, Andrew (ID080723550) <andrew.christian@example.edu>",No,,B,D,0,3,3,0,3,2024-04-21,2024-06-30,1:00 PM CT,4:00 PM CT,F
+"Collins, Catherine",catherine.collins@example.edu,ID303476034,,"On-line, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Winter 2016, Term Status: Registered, FAFSA: No",At Risk,Graduate (Winter 2024),Biochemistry,0.0,Timothy Coleman (Career Advisor),Second less hit charge his,SUR-300,33707,"Robertson, Shawn (ID650374707) <shawn.robertson@example.edu>",No,,A,C,2,2,2,0,12,2024-04-01,2024-06-10,1:00 PM CT,2:15 PM CT,W
+"Collins, Catherine",catherine.collins@example.edu,ID303476034,,"On-line, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Winter 2016, Term Status: Registered, FAFSA: No",At Risk,Graduate (Winter 2024),Biochemistry,0.0,Timothy Coleman (Career Advisor),Wall later believe knowledge discover bill,MUS-121,75814,"Jenkins, Diana (ID436548473) <diana.jenkins@example.edu>",Yes,2023-09-28,A,C,1,5,5,0,12,2023-12-23,2024-03-02,9:00 AM CT,10:15 AM CT,MWF
+"Collins, Catherine",catherine.collins@example.edu,ID303476034,,"On-line, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Winter 2016, Term Status: Registered, FAFSA: No",At Risk,Graduate (Winter 2024),Biochemistry,0.0,Timothy Coleman (Career Advisor),Heavy leg six magazine course far who,ROM-119,35138,"Dodson, Kyle (ID858069184) <kyle.dodson@example.edu>",No,,B,A,2,4,4,0,12,2024-05-15,2024-07-24,4:00 PM CT,7:00 PM CT,
+"Collins, Catherine",catherine.collins@example.edu,ID303476034,,"On-line, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Winter 2016, Term Status: Registered, FAFSA: No",At Risk,Graduate (Winter 2024),Biochemistry,0.0,Timothy Coleman (Career Advisor),Allow modern film defense,LAN-441,22765,"Kirby, Julian (ID385836169) <julian.kirby@example.edu>",No,,F,D,0,3,3,0,12,2024-04-04,2024-06-13,4:30 PM CT,5:45 PM CT,TR
+"Collins, Catherine",catherine.collins@example.edu,ID303476034,,"On-line, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Winter 2016, Term Status: Registered, FAFSA: No",At Risk,Graduate (Winter 2024),Biochemistry,0.0,Timothy Coleman (Career Advisor),Republican short first war value,URB-192,53853,"Coffey, Brenda (ID798122417) <brenda.coffey@example.edu>",Yes,2023-08-16,D,C,0,3,3,0,12,2024-03-22,2024-05-31,1:00 PM CT,4:00 PM CT,MWF
+"Collins, Catherine",catherine.collins@example.edu,ID303476034,,"On-line, Graduated: No, Graduate, Completion Rate: >= 66.67%, Start Term: Winter 2016, Term Status: Registered, FAFSA: No",At Risk,Graduate (Winter 2024),Biochemistry,0.0,Timothy Coleman (Career Advisor),Father impact woman outside example ever father,AHS-156,90666,"Waters, Emily (ID758574272) <emily.waters@example.edu>",No,,B,A,0,3,3,0,12,2023-12-22,2024-03-01,12:00 PM CT,1:15 PM CT,
+"Rivera, Donna",donna.rivera@example.edu,ID051164965,,"Satellite Campus, Graduated: No, Graduate, Completion Rate: < 66.67%, Start Term: Spring 2015, Term Status: Registered, FAFSA: No",,Foo (Spring 2024),Mechanical Engineering,4.0,"Amy Gonzalez (Career Advisor), Patricia Shaw (Professor)",Body official mind black possible,MTH-406,37113,"Sellers, Stephen (ID411073579) <stephen.sellers@example.edu>",No,,B,B,0,0,5,0,5,2024-02-03,2024-04-13,5:00 PM CT,9:00 PM CT,M
+"Rivera, Donna",donna.rivera@example.edu,ID051164965,,"Satellite Campus, Graduated: No, Graduate, Completion Rate: < 66.67%, Start Term: Spring 2015, Term Status: Registered, FAFSA: No",,Foo (Spring 2024),Mechanical Engineering,4.0,"Amy Gonzalez (Career Advisor), Patricia Shaw (Professor)",Force half state somebody,THR-098,60727,"Smith, Cynthia (ID519409430) <cynthia.smith2@example.edu>",No,,B,A,0,0,3,0,5,2024-01-28,2024-04-07,1:00 PM CT,2:00 PM CT,MWF
+"Rivera, Donna",donna.rivera@example.edu,ID051164965,,"Satellite Campus, Graduated: No, Graduate, Completion Rate: < 66.67%, Start Term: Spring 2015, Term Status: Registered, FAFSA: No",,Foo (Spring 2024),Mechanical Engineering,4.0,"Amy Gonzalez (Career Advisor), Patricia Shaw (Professor)",Pay media radio despite say cut my personal,ANT-144,86071,"Shaw, Patricia (ID740449289) <patricia.shaw@example.edu>",Yes,2023-04-02,C,F,0,1,1,0,5,2024-04-27,2024-07-06,4:30 PM CT,7:30 PM CT,MW
+"""  # noqa: E501 (line too long)
+    csv_path = tmp_path / "different_enrollments_report.csv"
+    with open(csv_path, "w") as f:
+        f.write(sample_enrollments_report)
+    return csv_path
 
 
 @pytest.fixture(
@@ -98,7 +190,7 @@ def multiindex(iris: pd.DataFrame, request: PytestFixtureRequest) -> pd.MultiInd
         pytest.param(
             lambda x: x**2, id="lambda squared"
         ),  # int -> int and float -> float
-        pytest.param(lambda arr: np.rint(arr).astype(int), id="rint"),  # any -> int
+        pytest.param(lambda arr: np.rint(arr).astype("int64"), id="rint"),  # any -> int
     ],
     name="func",
 )
@@ -132,7 +224,7 @@ def _fig_or_ax(request: PytestFixtureRequest) -> Literal["fig", "ax"]:
 def mpl_plots(
     func: Callable[[npt.ArrayLike], npt.NDArray[Numeric]],
     x_values: npt.NDArray[Numeric],
-) -> Iterable[dict[str, Union[plt.Figure, plt.Axes]]]:
+) -> Iterable[dict[str, plt.Figure | plt.Axes]]:
     """Returns dict of {fix, ax}, for various funcs and domains"""
     x = x_values
     y = func(x)
@@ -144,21 +236,23 @@ def mpl_plots(
 
 
 @pytest.fixture
-def mpl_axes(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Axes:
+def mpl_axes(mpl_plots: dict[str, plt.Figure | plt.Axes]) -> plt.Axes:
     """Returns a variety of `plt.Axes` objects"""
+    assert isinstance(mpl_plots["ax"], plt.Axes)  # for mypy
     return mpl_plots["ax"]
 
 
 @pytest.fixture
-def mpl_figs(mpl_plots: dict[str, Union[plt.Figure, plt.Axes]]) -> plt.Figure:
+def mpl_figs(mpl_plots: dict[str, plt.Figure | plt.Axes]) -> plt.Figure:
     """Returns a variety of `plt.Figure` objects"""
+    assert isinstance(mpl_plots["fig"], plt.Figure)  # for mypy
     return mpl_plots["fig"]
 
 
 @pytest.fixture
 def mpl_figs_and_axes(
-    mpl_plots: dict[str, Union[plt.Figure, plt.Axes]], _fig_or_ax: Literal["fig", "ax"]
-) -> Union[plt.Figure, plt.Axes]:
+    mpl_plots: dict[str, plt.Figure | plt.Axes], _fig_or_ax: Literal["fig", "ax"]
+) -> plt.Figure | plt.Axes:
     """Returns either the figure or the axis of various plots"""
     return mpl_plots[_fig_or_ax]
 
@@ -179,7 +273,7 @@ strftime_codes = [
 
 @pytest.fixture(
     params=iter(strftime_codes),
-    ids=[f"{today:{strftime}}" for strftime in strftime_codes],
+    ids=strftime_codes,
 )  # noqa
 def strftime(request: PytestFixtureRequest) -> str:
     """Various different strftime format codes"""
@@ -211,9 +305,9 @@ def datetime_df(request: PytestFixtureRequest) -> pd.DataFrame:
     9 2000-01-14 2000-03-05 2009-12-31"""
     df = pd.DataFrame(
         {
-            "A": makeDateIndex(freq="b"),
-            "B": makeDateIndex(freq="w"),
-            "C": makeDateIndex(freq="y"),
+            "A": pd.date_range("2000-01-01", periods=10, freq="b"),
+            "B": pd.date_range("2000-01-01", periods=10, freq="W"),
+            "C": pd.date_range("2000-01-01", periods=10, freq="YE"),
         }
     )
     time_offset = request.param
@@ -228,7 +322,29 @@ def datetime_and_float_df(datetime_df: pd.DataFrame) -> pd.DataFrame:
 
 
 @pytest.fixture(autouse=True)
+def _test_cache_cleanup() -> Iterator[None]:
+    """
+    Autouse fixture to remove EAB_tools/tests/io/data/.eab_tools_cache directory
+    after each test.
+    """
+    # Before the test
+    cache_path = Path(__file__).parent / "tests" / "io" / "data" / ".eab_tools_cache"
+    cache_path.mkdir(exist_ok=True)
+    pass
+
+    # yield
+    yield
+
+    # After the test
+    shutil.rmtree(cache_path)
+
+
+@pytest.fixture(autouse=True)
 def _docstring_tmp_path(request: PytestFixtureRequest) -> Iterator[None]:
+    """
+    Autouse  fixture to chdir to a tmp_path for all doctests without needing to
+    explicitly call it.
+    """
     # Almost completely adapted from a kind soul at https://stackoverflow.com/a/46991331
     # Trigger ONLY for the doctests.
     doctest_plugin = request.config.pluginmanager.getplugin("doctest")

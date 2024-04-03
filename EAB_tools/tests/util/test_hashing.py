@@ -1,4 +1,5 @@
 """Tests for hashing"""
+
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -94,6 +95,6 @@ class TestHashMPLfig:
         rng = np.random.default_rng(seed=seed)
         xy = rng.random(2)
         color = rng.random(3)
-        mpl_axes.scatter(*xy, c=color)
+        mpl_axes.scatter(xy[0], xy[1], color=color)
         b = hash_mpl_fig(mpl_axes)
         assert a != b

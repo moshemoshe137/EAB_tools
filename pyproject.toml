@@ -24,12 +24,19 @@ classifiers = [
 ]
 dynamic = ["version", "dependencies"]  # Defined in setup.py
 
+[project.optional-dependencies]
+progress_bar = ['tqdm']
+
 [project.urls]
 "Homepage" = "https://github.com/moshemoshe137/EAB_tools"
 "Bug Tracker" = "https://github.com/moshemoshe137/EAB_tools/issues"
 
 [tool.black]
-target-version = ["py39", "py310"]
+target-version = ["py39", "py310", "py311", "py312"]
+
+[tool.flake8]
+count = true
+max-line-length = 88
 
 [tool.isort]
 # Most settings are barrowed from pandas

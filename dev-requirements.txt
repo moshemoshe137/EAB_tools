@@ -6,15 +6,17 @@ pytest-random-order
 
 # Additional functionality
 openpyxl
+xlrd
 
 # Code checks
-black == 22.8.0
+black == 24.1.0
 pre-commit
 flake8
 flake8-bugbear
 flake8-comprehensions
+Flake8-pyproject
 isort
-mypy
+mypy == 1.7.0
 pyupgrade
 pydocstyle
 
@@ -22,3 +24,13 @@ pydocstyle
 types-atomicwrites
 types-python-dateutil
 types-setuptools
+
+# Generate fake data
+Faker >= 23.2.0
+
+# Work with Jupyter Notebooks
+notebook
+
+# Silence `pandas` DeprecationWarning
+# and maybe adds a performance boost too? Unclear
+pyarrow

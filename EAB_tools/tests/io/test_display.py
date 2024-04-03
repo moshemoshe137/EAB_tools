@@ -1,15 +1,13 @@
 # pylint: disable=C0114, C0116
+from __future__ import annotations
+
 from collections.abc import Sequence
-from contextlib import nullcontext as does_not_raise
 import itertools
-import os
 from pathlib import Path
 import re
 from typing import (
     Any,
     ContextManager,
-    Optional,
-    Union,
 )
 
 from matplotlib import pyplot as plt
@@ -30,11 +28,6 @@ try:
     _HAS_OPENPYXL = True
 except ImportError:
     _HAS_OPENPYXL = False
-
-
-@pytest.fixture(autouse=True)
-def _init(tmp_path: Path) -> None:
-    os.chdir(tmp_path)
 
 
 SaveImageTrueParam = pytest.param(True, marks=pytest.mark.slow)
@@ -72,7 +65,7 @@ class TestDisplayAndSaveDf:
         display_and_save_df(iris_mi.T, save_image=save_image, save_excel=save_excel)
 
     @staticmethod
-    def col_name_from_iris_single_col_subset(col_name: Union[str, pd.Index]) -> str:
+    def col_name_from_iris_single_col_subset(col_name: str | pd.Index) -> str:
         return col_name if isinstance(col_name, str) else col_name[0]
 
     @pytest.mark.parametrize(
@@ -123,7 +116,7 @@ class TestDisplayAndSaveDf:
     def test_styler_expected_text(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         kwargs: dict[str, Any],
         save_image: bool,
         save_excel: bool,
@@ -149,9 +142,9 @@ class TestDisplayAndSaveDf:
             an_expected_value = ""
 
         if pd.api.types.is_string_dtype(col):
-            context: ContextManager[Optional[object]] = pytest.raises(ValueError)
+            context: ContextManager[object | None] = pytest.raises(ValueError)
         else:
-            context = does_not_raise()
+            context = tm.does_not_raise()
         with context:
             # str columns with incorrect format code should
             # throw a ValueError
@@ -325,7 +318,7 @@ class TestDisplayAndSaveDf:
     def test_ryg_background_gradient(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         save_image: bool,
         save_excel: bool,
     ) -> None:
@@ -333,11 +326,11 @@ class TestDisplayAndSaveDf:
 
         # Should get ValueError on string dtypes
         if pd.api.types.is_string_dtype(iris[col_name]):
-            context: ContextManager[Optional[object]] = pytest.raises(
+            context: ContextManager[object | None] = pytest.raises(
                 ValueError, match="could not convert string to float"
             )
         else:
-            context = does_not_raise()
+            context = tm.does_not_raise()
 
         with context:
             styler = display_and_save_df(
@@ -355,7 +348,7 @@ class TestDisplayAndSaveDf:
     def test_ryg_background_vmin(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         save_image: bool,
         save_excel: bool,
     ) -> None:
@@ -387,7 +380,7 @@ class TestDisplayAndSaveDf:
     def test_ryg_background_vmax(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         save_image: bool,
         save_excel: bool,
     ) -> None:
@@ -417,7 +410,7 @@ class TestDisplayAndSaveDf:
     def test_gyr_background_vmin(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         save_image: bool,
         save_excel: bool,
     ) -> None:
@@ -448,7 +441,7 @@ class TestDisplayAndSaveDf:
     def test_gyr_background_vmax(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         save_image: bool,
         save_excel: bool,
     ) -> None:
@@ -477,7 +470,7 @@ class TestDisplayAndSaveDf:
     def test_bar_style(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         save_image: bool,
         save_excel: bool,
     ) -> None:
@@ -512,7 +505,7 @@ class TestDisplayAndSaveDf:
     def test_bar_vmin(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         save_image: bool,
         save_excel: bool,
     ) -> None:
@@ -544,7 +537,7 @@ class TestDisplayAndSaveDf:
     def test_bar_vmax(
         self,
         iris: pd.DataFrame,
-        iris_single_col_subset: Union[str, pd.Index],
+        iris_single_col_subset: str | pd.Index,
         save_image: bool,
         save_excel: bool,
     ) -> None:
@@ -586,7 +579,7 @@ class TestDisplayAndSaveFig:
         tm._minimize_tkagg()
 
     def test_doesnt_fail(
-        self, mpl_figs_and_axes: Union[plt.Figure, plt.Axes], save_image: bool
+        self, mpl_figs_and_axes: plt.Figure | plt.Axes, save_image: bool
     ) -> None:
         display_and_save_fig(mpl_figs_and_axes, save_image=save_image)
 
@@ -620,11 +613,13 @@ class TestDisplayAndSaveFig:
     def test_infer_filename_from_fig_suptitle(
         self,
         save_image: bool,
-        mpl_figs_and_axes: Union[plt.Figure, plt.Axes],
+        mpl_figs_and_axes: plt.Figure | plt.Axes,
     ) -> None:
         fig: plt.Figure
         if isinstance(mpl_figs_and_axes, plt.Axes):
-            fig = mpl_figs_and_axes.get_figure()
+            get_figure = mpl_figs_and_axes.get_figure()
+            assert get_figure is not None  # for `mypy`
+            fig = get_figure
         else:
             fig = mpl_figs_and_axes
 
@@ -635,7 +630,7 @@ class TestDisplayAndSaveFig:
         assert Path(f"{name}.png").exists()
 
     def test_infer_filename_from_axis(
-        self, save_image: bool, mpl_figs_and_axes: Union[plt.Figure, plt.Axes]
+        self, save_image: bool, mpl_figs_and_axes: plt.Figure | plt.Axes
     ) -> None:
         if isinstance(mpl_figs_and_axes, plt.Figure):
             axes: plt.Axes = mpl_figs_and_axes.axes[0]
@@ -652,7 +647,7 @@ class TestDisplayAndSaveFig:
     def test_filename_from_hash(
         self,
         save_image: bool,
-        mpl_figs_and_axes: Union[plt.Figure, plt.Axes],
+        mpl_figs_and_axes: plt.Figure | plt.Axes,
     ) -> None:
         expected_hash = eab.util.hash_mpl_fig(mpl_figs_and_axes)
         display_and_save_fig(mpl_figs_and_axes, save_image=True)

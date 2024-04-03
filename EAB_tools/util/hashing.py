@@ -1,10 +1,11 @@
 """Utilities for hashing objects."""
-import hashlib
-from typing import (
-    Optional,
-    Union,
-)
 
+from __future__ import annotations
+
+import hashlib
+from typing import cast
+
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -14,9 +15,9 @@ from EAB_tools.eab_rc import eab_rc
 
 
 def hash_df(
-    df: Union[pd.DataFrame, pd.Series, pd.Index, pd.MultiIndex],
-    styler: Optional[pd.io.formats.style.Styler] = None,
-    max_len: Optional[int] = eab_rc["hash_len"],
+    df: pd.DataFrame | pd.Series | pd.Index | pd.MultiIndex,
+    styler: pd.io.formats.style.Styler | None = None,
+    max_len: int | None = eab_rc["hash_len"],
     usedforsecurity: bool = False,
 ) -> str:
     """
@@ -63,15 +64,17 @@ def hash_df(
 
 
 def hash_mpl_fig(
-    fig: Union[plt.Figure, plt.Axes],
-    max_len: Optional[int] = eab_rc["hash_len"],
+    fig: plt.Figure | plt.Axes,
+    max_len: int | None = eab_rc["hash_len"],
     usedforsecurity: bool = False,
 ) -> str:
     """Hash a matplotlib figure."""
-    if isinstance(fig, plt.Axes):
-        fig = fig.get_figure()
-    fig.canvas.draw()
-    buf = fig.canvas.buffer_rgba()
+    figure = fig.get_figure() if isinstance(fig, plt.Axes) else fig
+    assert figure is not None
+
+    canvas: FigureCanvasAgg = cast(FigureCanvasAgg, figure.canvas)
+    canvas.draw()
+    buf = canvas.buffer_rgba()
     X = np.asarray(buf).tobytes()
 
     h = hashlib.sha1(usedforsecurity=usedforsecurity)
