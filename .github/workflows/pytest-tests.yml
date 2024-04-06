@@ -26,11 +26,11 @@ jobs:
           - test_type: "Pytest Tests"
             flags: "-m 'slow or not slow'"
             codecov_flag: "unittests,slow"
-            envs: ('alldeps', 'nodeps')
+            envs: ('alldeps', 'minimal')
           - test_type: "Quick Pytest Tests"
             flags: ""
             codecov_flag: "unittests,quick"
-            envs: ('alldeps', 'nodeps', 'openpyxl', 'xlrd', 'tqdm', 'openpyxl_xlrd')
+            envs: ('alldeps', 'minimal', 'openpyxl', 'xlrd', 'tqdm', 'openpyxl_xlrd')
         exclude:
           - os: macos-latest
             test_type: "Quick Pytest Tests"
