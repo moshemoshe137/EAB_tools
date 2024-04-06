@@ -9,7 +9,7 @@ openpyxl
 xlrd
 
 # Code checks
-black == 24.1.0
+black == 24.3.0
 pre-commit
 flake8
 flake8-bugbear
