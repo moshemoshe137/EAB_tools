@@ -26,9 +26,11 @@ jobs:
           - test_type: "Pytest Tests"
             flags: "-m 'slow or not slow'"
             codecov_flag: "unittests,slow"
+            envs: ('alldeps', 'nodeps')
           - test_type: "Quick Pytest Tests"
             flags: ""
             codecov_flag: "unittests,quick"
+            envs: ('alldeps', 'nodeps', 'openpyxl', 'xlrd', 'tqdm', 'openpyxl_xlrd')
         exclude:
           - os: macos-latest
             test_type: "Quick Pytest Tests"
@@ -56,7 +58,7 @@ jobs:
 
     - name: Run tests with tox
       run: >
-        $envs = @('alldeps', 'nodeps', 'openpyxl', 'xlrd', 'tqdm', 'openpyxl_xlrd');
+        $envs = @${{ matrix.envs }};
         foreach ($env in $envs) {
           tox `
           -e `
