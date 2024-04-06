@@ -51,10 +51,6 @@ jobs:
 
     - uses: actions/cache@v4
       with:
-        path: .tox
-        key: tox|${{ matrix.python-version }}|${{ matrix.os }}
-    - uses: actions/cache@v4
-      with:
         path: EAB_tools/tests/io/data
         key: ${{ hashFiles('EAB_tools/_testing/test_scripts/**/*generat*') }}
 
