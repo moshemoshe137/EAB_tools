@@ -5,7 +5,6 @@ from collections.abc import (
 import itertools
 import os
 from pathlib import Path
-import shutil
 import subprocess
 from typing import (
     Any,
@@ -318,24 +317,6 @@ def datetime_and_float_df(datetime_df: pd.DataFrame) -> pd.DataFrame:
     """datetime_df with additional columns of random positive and negative floats"""
     datetime_df[list("DE")] = np.random.uniform(-1, 1, (10, 2))
     return datetime_df
-
-
-@pytest.fixture(autouse=True)
-def _test_cache_cleanup() -> Iterator[None]:
-    """
-    Autouse fixture to remove EAB_tools/tests/io/data/.eab_tools_cache directory
-    after each test.
-    """
-    # Before the test
-    cache_path = Path(__file__).parent / "tests" / "io" / "data" / ".eab_tools_cache"
-    cache_path.mkdir(exist_ok=True)
-    pass
-
-    # yield
-    yield
-
-    # After the test
-    shutil.rmtree(cache_path)
 
 
 @pytest.fixture(autouse=True)
