@@ -4,6 +4,7 @@ pytest
 flaky
 pytest-cov
 pytest-random-order
+pytext-xdist
 
 # Additional functionality
 openpyxl

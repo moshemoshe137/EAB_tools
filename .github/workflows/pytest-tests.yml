@@ -60,22 +60,22 @@ jobs:
         key: ${{ hashFiles('EAB_tools/_testing/test_scripts/**/*generat*') }}
 
     - name: Run tests with tox
-      run: >
+      run: |
         $envs = @${{ matrix.envs }};
-        foreach ($env in $envs) {
-          tox `
-          -e `
-          py${{ matrix.python-version }}-$env `
-          -- `
-          --doctest-modules `
-          --random-order-seed=0 `
-          --verbose `
-          ${{ matrix.flags }} `
-          --durations=100 `
-          --cov `
-          --cov-report=xml `
-          --cov-append
-        }
+        $envString = $envs -join ",py${{ matrix.python-version }}-";
+        $envString = "py${{ matrix.python-version }}-$envString";
+        tox `
+        -e `
+        $envString `
+        -- `
+        --doctest-modules `
+        --random-order-seed=0 `
+        --verbose `
+        ${{ matrix.flags }} `
+        --durations=100 `
+        --cov `
+        --cov-report=xml `
+        --cov-append
 
     - name: Report Coverage
       run: coverage report -m
