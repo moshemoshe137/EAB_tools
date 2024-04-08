@@ -8,10 +8,12 @@ from pathlib import Path
 import random
 
 from faker import Faker
+from filelock import FileLock
 import numpy as np
 import pandas as pd
 
 import EAB_tools
+from EAB_tools._testing import PathLike
 from EAB_tools._testing.data_generation import (
     EV,
     generate_cumulative_gpas,
@@ -284,7 +286,9 @@ assigned_staff_role_probabilities: dict[str, float] = {
 
 # %%
 def generate_fake_enrollments(
-    RANDOM_SEED: int | None = None, n_records: int | None = None
+    RANDOM_SEED: int | None = None,
+    n_records: int | None = None,
+    output_dir: PathLike | None = None,
 ) -> None:
     """Generate a fake EAB v2 Enrollments Report."""
     # %%
@@ -781,28 +785,30 @@ def generate_fake_enrollments(
     df
 
     # %%
-    d = Path(EAB_tools.__file__).parent / "tests" / "io" / "data"
-    d.mkdir(exist_ok=True)
-    p = d / (
+    output_dir = (
+        Path(EAB_tools.__file__).parent / "tests" / "io" / "data"
+        if output_dir is None
+        else Path(output_dir)
+    )
+    output_dir.mkdir(exist_ok=True)
+    p = output_dir / (
         "campus-v2report-enrollment"
         + (f"-{_RANDOM_SEED}" if RANDOM_SEED is not None else "")
         + (f"-{n_records}" if specified_n_records else "")
         + ".csv"
     )
     print(f"Saving to {p}")
-    df.to_csv(p, index=False)
+    lockfile = FileLock(str(p) + ".lock")
+    with lockfile:
+        csv_content = df.to_csv(index=False)
 
-    # %%
-    with open(p, "r+", encoding="UTF-8") as f:
-        today = f"{pd.Timestamp.today():%m/%d/%Y %H:%M:00}"
+        # %%
+        with open(p, "w", encoding="UTF-8") as f:
+            today = f"{pd.Timestamp.today():%m/%d/%Y %H:%M:00}"
 
-        lines = [
-            f"Example University,Student Enrollments,,{today},Moshe Rubin\n",
-            "\n",
-        ] + f.readlines()
+            header = f"Example University,Student Enrollments,,{today},Moshe Rubin\n\n"
 
-        f.seek(0)
-        f.writelines(lines)
+            f.write(header + csv_content)
 
 
 # %%
@@ -822,7 +828,7 @@ if __name__ == "__main__":
         help="Optional random seed for reproducibility.",
     )
 
-    # Add the --n-records arguments with shorthand -n
+    # Add the --n-records argument with shorthand -n
     parser.add_argument(
         "-n",
         "--n-records",
@@ -830,7 +836,10 @@ if __name__ == "__main__":
         help=f"Specify the number of records to create. Defaults to {_n_records:,}.",
     )
 
+    # Add the --output argument with shorthand -o
+    parser.add_argument("-o", "--output", type=str, help="Choose the output directory.")
+
     # Parse the arguments
     args = parser.parse_args()
 
-    generate_fake_enrollments(args.random_seed, args.n_records)
+    generate_fake_enrollments(args.random_seed, args.n_records, args.output)

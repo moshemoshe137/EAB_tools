@@ -4,6 +4,10 @@ from pathlib import Path
 import random
 import subprocess
 import sys
+from typing import (
+    Any,
+    Callable,
+)
 
 from faker import Faker
 import numpy as np
@@ -253,12 +257,20 @@ class TestReportGeneration:
 
         generate_fake_enrollments(RANDOM_SEED=set_random_seed, n_records=n_records)
 
+    put_in_quotes: Callable[[Any], str] = '"{}"'.format
+
     @pytest.mark.parametrize(
-        "random_seed_flag", ["-r", "--random-seed"], ids=" {} ".format
+        "random_seed_flag", ["-r", "--random-seed"], ids=put_in_quotes
     )
-    @pytest.mark.parametrize("n_records_flag", ["-n", "--n-records"], ids=" {} ".format)
+    @pytest.mark.parametrize("n_records_flag", ["-n", "--n-records"], ids=put_in_quotes)
+    @pytest.mark.parametrize("output_flag", ["-o", "--output"], ids=put_in_quotes)
     def test_generate_fake_enrollments_cli(
-        self, set_random_seed: int, random_seed_flag: str, n_records_flag: str
+        self,
+        set_random_seed: int,
+        random_seed_flag: str,
+        n_records_flag: str,
+        output_flag: str,
+        tmp_path: Path,
     ) -> None:
         # Base `n_records` on the seed
         n_records = set_random_seed + 1000
@@ -276,11 +288,13 @@ class TestReportGeneration:
             [
                 sys.executable,
                 # r"EAB_tools\tests\_testing\test_data_generation.py",
-                script_location,
+                str(script_location),
                 random_seed_flag,
                 str(set_random_seed),
                 n_records_flag,
                 str(n_records),
+                output_flag,
+                str(tmp_path),
             ],
             check=True,
         )
