@@ -79,10 +79,10 @@ class TestDataGeneration:
         assert generate_cumulative_gpas() == expected[set_random_seed]
 
     def test_generate_cumulative_GPAs_expected_attributes(self) -> None:
-        gpas = generate_cumulative_gpas(length=1_000)
+        gpas = generate_cumulative_gpas(length=10_000)
 
         # Ensure the right shape
-        assert gpas.shape == (1000,)
+        assert gpas.shape == (10_000,)
 
         # Ensure 0.00 <= GPA <= 4.00
         assert (gpas >= 0).all() and (gpas <= 4).all()
