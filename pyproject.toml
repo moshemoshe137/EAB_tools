@@ -73,9 +73,7 @@ show_error_codes = true
 convention = "numpy"
 match = '''(?x)
 (?!  # Does NOT begin with:
-test_.*  # Ignore tests
-|conftest  # and ignore conftest.pt
-|__init__  # Ignore __init__.py files
+__init__  # Ignore __init__.py files
 |setup
 )
 .*\.py
