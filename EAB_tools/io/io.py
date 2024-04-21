@@ -14,6 +14,7 @@ def load_df(
     filepath: PathLike,
     file_type: str = "detect",
     cache: bool = True,
+    cache_dir: PathLike | None = None,
     pkl_name: PathLike | None = None,
     **kwargs: Any,
 ) -> pd.DataFrame:
@@ -36,13 +37,14 @@ def load_df(
         If True and the pickle file exists, the function will load directly from the
         cached pickle object.
         If True and the pickle file does not exist, the function will load the CSV from
-        disk and then save a pickle in the .eab_tools_cache dir with xz compression.
+        disk and then save a pickle in the `cache_dir` dir with xz compression.
         If False, pickle objects will not be written or read.
-
+    cache_dir : PathLike
+        The directory to use for caching if `cache` is True. Defaults to
+        ".eab_tools_cache" directory in the same folder as the data file.
     pkl_name : PathLike, Optional
         The filename to use for the cached pickle object if it should not inherit from
         the underlying datafile filename.
-
     kwargs
         Keyword arguments to be passed to `pandas.read_csv` or `pandas.read_excel`,
         depending on the datafile's filetype.
@@ -106,10 +108,10 @@ def load_df(
         raise ValueError(f"Could not parse file of type {file_type_cf}")
 
     # If cache is True, try to load from cache
+    cache_dir = Path(cache_dir if cache_dir else ".eab_tools_cache")
     file_id = f"{name}{filepath.stat().st_mtime}"
-    data_dir = filepath.resolve().parent
     pkl_name = pkl_name if pkl_name else file_id
-    pkl_path = data_dir / ".eab_tools_cache" / f"{pkl_name}.pkl.xz"
+    pkl_path = cache_dir / f"{pkl_name}.pkl.xz"
     if cache and pkl_path.exists():
         print("Loading from pickle...")
         df = pd.read_pickle(pkl_path)
@@ -131,6 +133,6 @@ def load_df(
     if cache:
         # Pickle the df we have just loaded so it's faster
         # next time
-        (data_dir / ".eab_tools_cache").mkdir(exist_ok=True)
+        cache_dir.mkdir(exist_ok=True)
         df.to_pickle(pkl_path)
     return df

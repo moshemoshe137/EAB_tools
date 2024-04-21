@@ -8,7 +8,6 @@ from collections.abc import (
 import itertools
 import os
 from pathlib import Path
-import shutil
 import subprocess
 from typing import (
     Any,
@@ -16,6 +15,7 @@ from typing import (
 )
 
 import dateutil.tz
+from filelock import FileLock
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
@@ -54,15 +54,23 @@ def data_dir() -> Path:
 
 
 @pytest.fixture(autouse=True, scope="session")
-def generate_all_test_data() -> None:
-    data_dir = _generate_enrollments_path.parent
-    enrollments_glob = list(data_dir.glob("campus-v2report-enrollment*.csv"))
-    EAB_tools._testing.test_scripts.generate_all_test_data.main(
-        generate_enrollment_reports=len(enrollments_glob) < 2
-    )
+def generate_all_test_data(tmp_path_factory: pytest.TempPathFactory) -> None:
+    # We need to ensure that this function only runs onces, even across multiple workers
+    # https://pytest-xdist.readthedocs.io/en/stable/how-to.html#making-session-scoped-fixtures-execute-only-once
 
-    global enrollments_df
-    enrollments_df = pd.read_csv(_enrollments_Path, header=1)
+    # Get the temp directory shared by all workers
+    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+
+    lock_file = root_tmp_dir / "generate_all_test_data.lock"
+    with FileLock(lock_file):
+        data_dir = _generate_enrollments_path.parent
+        enrollments_glob = list(data_dir.glob("campus-v2report-enrollment*.csv"))
+        EAB_tools._testing.test_scripts.generate_all_test_data.main(
+            generate_enrollment_reports=len(enrollments_glob) < 2
+        )
+
+        global enrollments_df
+        enrollments_df = pd.read_csv(_enrollments_Path, header=1)
 
 
 @pytest.fixture
@@ -319,24 +327,6 @@ def datetime_and_float_df(datetime_df: pd.DataFrame) -> pd.DataFrame:
     """datetime_df with additional columns of random positive and negative floats"""
     datetime_df[list("DE")] = np.random.uniform(-1, 1, (10, 2))
     return datetime_df
-
-
-@pytest.fixture(autouse=True)
-def _test_cache_cleanup() -> Iterator[None]:
-    """
-    Autouse fixture to remove EAB_tools/tests/io/data/.eab_tools_cache directory
-    after each test.
-    """
-    # Before the test
-    cache_path = Path(__file__).parent / "tests" / "io" / "data" / ".eab_tools_cache"
-    cache_path.mkdir(exist_ok=True)
-    pass
-
-    # yield
-    yield
-
-    # After the test
-    shutil.rmtree(cache_path)
 
 
 @pytest.fixture(autouse=True)

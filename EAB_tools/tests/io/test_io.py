@@ -9,6 +9,19 @@ import pytest
 from EAB_tools import load_df
 import EAB_tools._testing as tm
 
+try:
+    import xlrd  # noqa: F401 # 'xlrd' imported but unused
+
+    _HAS_XLRD = True
+except ImportError:
+    _HAS_XLRD = False
+try:
+    import openpyxl  # noqa: F401 # 'openpyxl' imported but unused
+
+    _HAS_OPENPYXL = True
+except ImportError:
+    _HAS_OPENPYXL = False
+
 
 def all_mixups(file_extension: str) -> list[str]:
     """
@@ -41,23 +54,40 @@ class TestLoadDf:
     data_dir = Path(__file__).parent / "data"
     files = list(data_dir.glob("iris*"))
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
-    def test_doesnt_fail(self, cache: bool, file: tm.PathLike) -> None:
-        load_df(file, cache=cache)
+    # Mark files with `pytest` `param`s
+    files_with_marks = []
+    for file in files:
+        if "xlsx" in file.suffix.casefold():
+            param = pytest.param(
+                file,
+                marks=pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl required"),
+            )
+        elif "xls" in file.suffix.casefold():
+            param = pytest.param(
+                file, marks=pytest.mark.skipif(not _HAS_XLRD, reason="xlrd required")
+            )
+        else:
+            param = pytest.param(file)
+        files_with_marks.append(param)
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
+    def test_doesnt_fail(self, cache: bool, file: tm.PathLike, tmp_path: Path) -> None:
+        load_df(file, cache=cache, cache_dir=tmp_path)
+
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     def test_load_iris(
-        self, file: tm.PathLike, iris: pd.DataFrame, cache: bool
+        self, file: tm.PathLike, iris: pd.DataFrame, cache: bool, tmp_path: Path
     ) -> None:
-        df = load_df(file, cache=cache)
+        df = load_df(file, cache=cache, cache_dir=tmp_path)
 
         assert (df == iris).all(axis=None)
 
+    # For tests that need both the file and its potential marks
     @pytest.mark.parametrize(
-        "file,file_type_specification",
+        "file, file_type_specification",
         [
-            (file, suffix_specification)
-            for file in files
+            pytest.param(file, suffix_specification, marks=file_with_marks.marks)
+            for file, file_with_marks in zip(files, files_with_marks)
             for suffix_specification in all_mixups(file.suffix)
         ],
         ids=str,
@@ -68,18 +98,25 @@ class TestLoadDf:
         file_type_specification: str,
         iris: pd.DataFrame,
         cache: bool,
+        tmp_path: Path,
     ) -> None:
         # Make a copy of the csv with a weird extension
-        weird_file = Path(str(file) + ".foo")
-        shutil.copy(file, weird_file)
+        weird_file = tmp_path / Path(str(file) + ".foo").name
+        if not weird_file.exists():
+            shutil.copy(file, weird_file)
 
-        df = load_df(weird_file, file_type=file_type_specification, cache=cache)
+        df = load_df(
+            weird_file,
+            file_type=file_type_specification,
+            cache=cache,
+            cache_dir=tmp_path,
+        )
         assert (df == iris).all(axis=None)
 
         # Clean up
         weird_file.unlink()
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     @pytest.mark.parametrize(
         "pkl_name",
         [
@@ -93,11 +130,12 @@ class TestLoadDf:
         ],
     )
     def test_pickle_name(
-        self, file: tm.PathLike, cache: bool, pkl_name: tm.PathLike
+        self, file: tm.PathLike, cache: bool, pkl_name: tm.PathLike, tmp_path: Path
     ) -> None:
         load_df(
             file,
             cache=True,  # Must be true to test pickling
+            cache_dir=tmp_path,
             pkl_name=pkl_name,
         )
         if pkl_name is None:
@@ -105,10 +143,11 @@ class TestLoadDf:
         else:
             pkl_name = f"{pkl_name}.pkl.xz"
 
-        assert (Path(file).parent / ".eab_tools_cache" / pkl_name).exists()
+        assert (tmp_path / pkl_name).exists()
 
     @pytest.mark.parametrize("sn", ["spam", "eggs", "spam&eggs", "iris", None])
-    def test_multiple_excel_sheets(self, cache: bool, sn: str) -> None:
+    @pytest.mark.skipif(not _HAS_OPENPYXL, reason="openpyxl required")
+    def test_multiple_excel_sheets(self, cache: bool, sn: str, tmp_path: Path) -> None:
         file = self.data_dir / "multiple_sheets.xlsx"
 
         # `sheet_name = None` behavior is not yet defined and right now is expected
@@ -119,34 +158,47 @@ class TestLoadDf:
         assert isinstance(context, ContextManager)
 
         with context:
-            load_df(file, cache=cache, sheet_name=sn)
+            load_df(file, cache=cache, cache_dir=tmp_path, sheet_name=sn)
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     @pytest.mark.parametrize("bad_file_type", [".db", "gsheets", "exe", ".PY"])
     def test_bad_filetype(
-        self, file: tm.PathLike, cache: bool, bad_file_type: str
+        self, file: tm.PathLike, cache: bool, bad_file_type: str, tmp_path: Path
     ) -> None:
         msg = "Could not parse file of type"
         with pytest.raises(ValueError, match=msg):
-            load_df(file, cache=cache, file_type=bad_file_type)
+            load_df(file, file_type=bad_file_type, cache=cache, cache_dir=tmp_path)
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     @pytest.mark.parametrize("ambiguous_suffix", [".csv.xlsx", ".xlsx.csv"])
     def test_ambiguous_filetype(
-        self, file: tm.PathLike, cache: bool, ambiguous_suffix: str
+        self, file: tm.PathLike, cache: bool, ambiguous_suffix: str, tmp_path: Path
     ) -> None:
         file = Path(file)  # Make mypy happy
         msg = r"Ambiguous suffix\(es\):"
         with pytest.raises(ValueError, match=msg):
-            load_df(f"{file.name}{ambiguous_suffix}", cache=cache, file_type="detect")
+            load_df(
+                f"{file.name}{ambiguous_suffix}",
+                file_type="detect",
+                cache=cache,
+                cache_dir=tmp_path,
+            )
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
-    def test_wrong_filetype(self, file: tm.PathLike, cache: bool) -> None:
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
+    def test_wrong_filetype(
+        self, file: tm.PathLike, cache: bool, tmp_path: Path
+    ) -> None:
         file = Path(file)
         my_file_type = file.suffix.casefold().replace(".", "")
         wrong_file_types = [
             suffix for suffix in ["csv", "xls", "xlsx"] if suffix not in my_file_type
         ]
+        if not _HAS_XLRD and "xls" in wrong_file_types:
+            # `xlrd` is required for .xls files
+            wrong_file_types.remove("xls")
+        if not _HAS_OPENPYXL and "xlsx" in wrong_file_types:
+            # `openpyxl` is required for .xlsx files
+            wrong_file_types.remove("xlsx")
 
         msg = r"""(?xi)
         can't\ decode\ byte  # UnicodeDecodeError
@@ -156,20 +208,26 @@ class TestLoadDf:
         """
         for wrong_file_type in wrong_file_types:
             with pytest.raises(Exception, match=msg):
-                load_df(file, cache=cache, file_type=wrong_file_type)
+                load_df(
+                    file, file_type=wrong_file_type, cache=cache, cache_dir=tmp_path
+                )
 
-    @pytest.mark.parametrize("file", files, ids=lambda pth: pth.name)
+    @pytest.mark.parametrize("file", files_with_marks, ids=lambda pth: pth.name)
     def test_load_df_cache(
-        self, file: tm.PathLike, cache: bool, capsys: CaptureFixture[str]
+        self,
+        file: tm.PathLike,
+        cache: bool,
+        capsys: CaptureFixture[str],
+        tmp_path: Path,
     ) -> None:
         file = Path(file)  # Make mypy happy
 
         # Make sure one read comes from the file
-        df = load_df(file, cache=True)
+        df = load_df(file, cache=True, cache_dir=tmp_path)
         assert "Attempting to load the file from disk..." in capsys.readouterr().out
 
         # Make sure the other read comes from the pickle
-        df_cached = load_df(file, cache=True)
+        df_cached = load_df(file, cache=True, cache_dir=tmp_path)
         assert "Loading from pickle..." in capsys.readouterr().out
 
         # They better be equal!

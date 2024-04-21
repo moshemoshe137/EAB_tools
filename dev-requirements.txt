@@ -1,8 +1,10 @@
 # Testing
+tox
 pytest
 flaky
 pytest-cov
 pytest-random-order
+pytest-xdist
 
 # Additional functionality
 openpyxl
