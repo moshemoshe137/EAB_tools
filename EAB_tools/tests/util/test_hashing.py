@@ -5,6 +5,8 @@ hashing utilities applied to different data structures such as `pandas` DataFram
 `matplotlib` figures, and more.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 import matplotlib.pyplot as plt
