@@ -76,7 +76,9 @@ def load_df(
     [150 rows x 5 columns]
     >>> df_again = load_df(iris_filepath)
     Loading from pickle...
-    >>> (df == df_again).all(axis=None)
+    >>> bool(
+    ...     (df == df_again).all(axis=None)
+    ... )
     True
     """
     CSV, XLS, XLSX = "csv", "xls", "xlsx"
