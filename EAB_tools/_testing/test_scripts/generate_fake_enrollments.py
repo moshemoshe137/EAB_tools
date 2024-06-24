@@ -346,7 +346,7 @@ def generate_fake_enrollments(
                 f"ID{rand_id:09}"
                 for rand_id in random.sample(range(10**9), n_unique_students)
             ],
-            "Student Alternate ID": np.NaN,
+            "Student Alternate ID": np.nan,
             "Student Name": [
                 f"{fake[locale].last_name()}, {fake[locale].first_name()}"
                 for locale in sample_from_dict(locales_dict, size=n_unique_students)
@@ -359,7 +359,7 @@ def generate_fake_enrollments(
                 credit_hours_per_student_distribution, size=n_unique_students
             ),
         }
-    ).replace("None", np.NaN)
+    ).replace("None", np.nan)
 
     # %%
     unique_students["Student E-mail"] = generate_emails(unique_students["Student Name"])
@@ -778,7 +778,7 @@ def generate_fake_enrollments(
             ]
         ]
         .astype(str)
-        .replace({None: np.NaN})
+        .replace({None: np.nan})
     )
 
     # %%
