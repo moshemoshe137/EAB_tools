@@ -11,9 +11,8 @@ from typing import (
 
 import pandas as pd
 
-import EAB_tools._testing as tm
+from EAB_tools.io.filenames import PathLike
 
-from .display import PathLike
 from .io import load_df
 
 try:
@@ -36,9 +35,9 @@ def enrollments_report_date(
 
 
 def load_enrollments_report(
-    filename: tm.PathLike,
+    filename: PathLike,
     cache: bool = True,
-    pkl_name: tm.PathLike | None = None,
+    pkl_name: PathLike | None = None,
     convert_dates: bool = True,
     convert_section_to_string: bool = True,
     convert_categoricals: bool = True,

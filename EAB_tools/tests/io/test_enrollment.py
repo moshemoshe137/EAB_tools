@@ -75,9 +75,11 @@ def test_enrollments_report_date(
 class TestLoadAllEnrollmentReports:
     @pytest.mark.slow
     def test_load_all_enrollment_reports(
-        self, data_dir: Path, ignore_index: bool
+        self, data_dir: Path, ignore_index: bool, tmp_path: Path
     ) -> None:
-        load_all_enrollment_reports(data_dir, ignore_index=ignore_index)
+        load_all_enrollment_reports(
+            data_dir, ignore_index=ignore_index, cache_dir=tmp_path
+        )
 
     def test_load_all_enrollments_quicker(
         self, data_dir: Path, tmp_path: Path, ignore_index: bool
@@ -86,4 +88,6 @@ class TestLoadAllEnrollmentReports:
             if file.stat().st_size < 50 * 1024 * 1024:  # 50 MB
                 shutil.copy2(file, tmp_path)
 
-        load_all_enrollment_reports(tmp_path, ignore_index=ignore_index)
+        load_all_enrollment_reports(
+            tmp_path, ignore_index=ignore_index, cache_dir=tmp_path
+        )

@@ -82,7 +82,7 @@ test_.*  # Ignore tests
 '''
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --no-flaky-report --random-order-seed=0 -m 'not slow'"
+addopts = "--doctest-modules --no-flaky-report --random-order-seed=0 -m 'not slow' -n auto"
 doctest_optionflags = [
     "NORMALIZE_WHITESPACE",
     "ELLIPSIS"
@@ -91,7 +91,7 @@ markers = [
     "slow: mark a test as slow",
 ]
 minversion = "6.0"
-required_plugins = "flaky pytest-random-order"
+required_plugins = "flaky pytest-random-order pytest-xdist"
 xfail_strict = true
 
 [tool.setuptools.packages]

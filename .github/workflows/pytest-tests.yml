@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Pytest Tests - All OSes - Python 3.9, 3.10, 3.11, 3.12
+name: Tox Pytest Tests - All OSes - Python 3.9, 3.10, 3.11, 3.12
 
 on:
   push:
@@ -14,19 +14,36 @@ defaults:
 
 jobs:
   pytest-tests:
-    runs-on: ${{matrix.os}}
+    name: ${{ matrix.test_type }} - Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: [windows-latest, ubuntu-latest, macos-latest]
+        test_type: ["Pytest Tests", "Quick Pytest Tests"]
+        include:
+          - test_type: "Pytest Tests"
+            flags: "-m 'slow or not slow'"
+            codecov_flag: "unittests,slow"
+            envs: ('alldeps', 'minimal')
+          - test_type: "Quick Pytest Tests"
+            flags: ""
+            codecov_flag: "unittests,quick"
+            envs: ('alldeps', 'minimal', 'openpyxl', 'xlrd', 'tqdm', 'openpyxl_xlrd')
+        exclude:
+          - os: macos-latest
+            test_type: "Quick Pytest Tests"
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip' # caching pip dependencies
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools
@@ -35,17 +52,29 @@ jobs:
         {
           python -m pip install --requirement $f
         }
-      shell: pwsh
-    - name: Test with pytest
-      run: >
-        pytest
-        --doctest-modules
-        --random-order-seed=0
-        --verbose
-        -m 'slow or not slow'
-        --durations=100
-        --cov
-        --cov-report=xml
+
+    - name: Test data cache
+      uses: actions/cache@v4
+      with:
+        path: EAB_tools/tests/io/data
+        key: ${{ hashFiles('EAB_tools/_testing/test_scripts/**/*generat*') }}
+
+    - name: Run tests with tox
+      run: |
+        $envs = @${{ matrix.envs }};
+        $envString = $envs -join ",py${{ matrix.python-version }}-";
+        $envString = "py${{ matrix.python-version }}-$envString";
+        tox `
+        -e `
+        $envString `
+        -- `
+        --doctest-modules `
+        --random-order-seed=0 `
+        --verbose `
+        ${{ matrix.flags }} `
+        --durations=100 `
+        --cov `
+        --cov-report=xml `
         --cov-append
 
     - name: Report Coverage
@@ -55,5 +84,5 @@ jobs:
       uses: codecov/codecov-action@v4
       continue-on-error: true
       with:
-        flags: unittests,slow
+        flags: ${{ matrix.codecov_flag }}
         fail_ci_if_error: true
