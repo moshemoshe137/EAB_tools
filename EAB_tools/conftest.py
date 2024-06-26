@@ -1,3 +1,5 @@
+"""Provides fixtures and utility functions for testing."""
+
 from __future__ import annotations
 
 from collections.abc import (
@@ -44,12 +46,33 @@ enrollments_df: pd.DataFrame
 
 @pytest.fixture(autouse=True)
 def _init_tmp_path(tmp_path: Path) -> None:
-    """Autouse fixture to chdir to tmp_path for all tests."""
+    """
+    Change the working directory to `tmp_path` for tests.
+
+    This autouse fixture ensures all file operations during tests do not affect
+    the actual working directory or file system.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        The temporary directory for tests.
+    """
     os.chdir(tmp_path)
 
 
 @pytest.fixture
 def data_dir() -> Path:
+    """
+    Return the directory used for storing and retrieving test data files.
+
+    This fixture provides access to the directory where test data files are stored,
+    ensuring tests know where to locate data files.
+
+    Returns
+    -------
+    Path
+        A Path object representing the directory for test data.
+    """
     return _iris_Path.parent
 
 
@@ -57,7 +80,27 @@ def data_dir() -> Path:
 def generate_all_test_data(tmp_path_factory: pytest.TempPathFactory) -> None:
     # We need to ensure that this function only runs onces, even across multiple workers
     # https://pytest-xdist.readthedocs.io/en/stable/how-to.html#making-session-scoped-fixtures-execute-only-once
+    """
+    Generate and store all necessary test data files.
 
+    This session-scoped autouse fixture ensures that required test data files are
+    generated once and stored in the designated test data directory, shared across
+    all test workers. It manages concurrency with a file lock to prevent multiple
+    initializations.
+
+    Note:
+    This fixture will only generate new enrollment reports if fewer than two existing
+    reports are found in the directory, minimizing unnecessary data generation.
+
+    Parameters
+    ----------
+    tmp_path_factory : pytest.TempPathFactory
+        Factory for creating temporary directories specific to the test session.
+
+    Returns
+    -------
+    None
+    """
     # Get the temp directory shared by all workers
     root_tmp_dir = tmp_path_factory.getbasetemp().parent
 
@@ -75,19 +118,57 @@ def generate_all_test_data(tmp_path_factory: pytest.TempPathFactory) -> None:
 
 @pytest.fixture
 def iris_path() -> Path:
-    """pathlib Path object of absolute path to iris CSV file."""
+    """
+    Return the absolute path to the Iris dataset CSV file.
+
+    This fixture provides a reliable way to access the Iris dataset by returning
+    its absolute path, ensuring that tests reference the correct file regardless
+    of their current working directory.
+
+    Returns
+    -------
+    Path
+        The absolute path to the Iris CSV file.
+    """
     return _iris_Path.resolve()
 
 
 @pytest.fixture
 def iris() -> pd.DataFrame:
-    """The iris dataset as a pandas DataFrame."""
+    """
+    Return the Iris dataset loaded into a `pandas` DataFrame.
+
+    This fixture ensures that any test requiring the Iris dataset can access it
+    directly and consistently as a DataFrame, making it easy to perform tests
+    on the data without additional loading steps.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the Iris dataset.
+    """
     return iris_df
 
 
 @pytest.fixture(params=iris_df.columns)
 def iris_cols(request: PytestFixtureRequest) -> pd.Series:
-    """Return iris dataframe columns, one after the next"""
+    """
+    Cycle through each column of the Iris dataset and return it as a `pandas` Series.
+
+    This parameterized fixture iterates over each column in the Iris DataFrame,
+    providing a Series from the DataFrame for use in tests that may need to
+    operate on individual columns.
+
+    Parameters
+    ----------
+    request : PytestFixtureRequest
+        Holds the column name used to extract the Series from the Iris DataFrame.
+
+    Returns
+    -------
+    pd.Series
+        A Series representing one column of the Iris dataset.
+    """
     return iris_df[request.param]
 
 
@@ -97,7 +178,24 @@ def iris_cols(request: PytestFixtureRequest) -> pd.Series:
 def iris_single_col_subset(
     iris_cols: pd.Series, request: PytestFixtureRequest
 ) -> str | pd.Index:
-    """Return a col name as a str or pd.Index"""
+    """
+    Return a column name from the Iris dataset as a string or `pandas` Index.
+
+    This fixture allows testing with the column name in different formats, supporting
+    tests that require varied identifier types.
+
+    Parameters
+    ----------
+    iris_cols : pd.Series
+        Series representing one Iris dataset column.
+    request : PytestFixtureRequest
+        Function defining the return format: string or Index.
+
+    Returns
+    -------
+    Union[str, pd.Index]
+        Column name as either a string or a `pandas` Index.
+    """
     func = request.param
     col = iris_cols.name
     return func(col)
@@ -105,16 +203,50 @@ def iris_single_col_subset(
 
 @pytest.fixture
 def enrollments_report_path() -> Path:
+    """
+    Retrieve the absolute path to the enrollments report file used in tests.
+
+    This fixture provides a reliable way to access the path of the enrollments report,
+    ensuring that tests consistently reference the correct file location.
+
+    Returns
+    -------
+    Path
+        The absolute path to the enrollments report file.
+    """
     return _enrollments_Path.resolve()
 
 
 @pytest.fixture
 def enrollments_report() -> pd.DataFrame:
+    """
+    Return the current DataFrame holding the test enrollments report.
+
+    This fixture provides direct access to the loaded enrollments report, allowing
+    tests to easily reference the data without the need for reloading or additional
+    processing steps.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the test enrollments report data.
+    """
     return enrollments_df
 
 
 @pytest.fixture
 def generate_new_enrollments_report() -> pd.DataFrame:
+    """
+    Generate and return a new test enrollments report DataFrame by executing a script.
+
+    This fixture runs a script that updates the enrollments data file and then reloads
+    it into a DataFrame. It can be used to force-regenerate a new test report.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the newly generated test enrollments report.
+    """
     global enrollments_df
     subprocess.run(["ipython", str(_generate_enrollments_path)])
     enrollments_df = pd.read_csv(_enrollments_Path, header=1)
@@ -122,7 +254,24 @@ def generate_new_enrollments_report() -> pd.DataFrame:
 
 
 @pytest.fixture
-def different_enrollments_report(tmp_path: Path) -> pd.DataFrame:
+def different_enrollments_report(tmp_path: Path) -> Path:
+    """
+    Generate a small deterministic test enrollments report and save it as a CSV.
+
+    This fixture creates a test enrollments report with predefined data and writes it to
+    a CSV file in a temporary directory. It returns the path to the newly generated CSV
+    file.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        The temporary directory where the CSV file will be stored.
+
+    Returns
+    -------
+    Path
+        A Path object pointing to the newly created CSV file.
+    """
     sample_enrollments_report = """Example University,Student Enrollments,,03/10/2024 20:30:00,Moshe Rubin
 
 Student Name,Student E-mail,Student ID,Student Alternate ID,Categories,Tags,Classification,Major,Cumulative GPA,Assigned Staff,Course Name,Course Number,Section,Instructors,Dropped?,Dropped Date,Midterm Grade,Final Grade,Total Progress Reports,Absences,Unexcused Absences,Excused Absences,Credit Hours,Start Date,End Date,Start Time,End Time,Class Days
@@ -174,9 +323,25 @@ Student Name,Student E-mail,Student ID,Student Alternate ID,Categories,Tags,Clas
     ]
 )
 def series(request: PytestFixtureRequest) -> pd.Series:
-    """Return several series with unique dtypes"""
-    # Fixture borrowed from pandas from
-    # https://github.com/pandas-dev/pandas/blob/5b2fb093f6abd6f5022fe5459af8327c216c5808/pandas/tests/util/test_hashing.py
+    """
+    Return a series with unique data types for testing purposes.
+
+    This parameterized fixture generates different types of `pandas` Series, each
+    representing unique data types and structures. It facilitates testing functions that
+    require input variability or specific data type handling. The fixture's design is
+    stolen from the pandas project's test suite for series hashing:
+    https://github.com/pandas-dev/pandas/blob/5b2fb093f6abd6f5022fe5459af8327c216c58/pandas/tests/util/test_hashing.py
+
+    Parameters
+    ----------
+    request : PytestFixtureRequest
+        Holds the parameterized series configurations.
+
+    Returns
+    -------
+    pd.Series
+        A Series with the specified data type or structure.
+    """
     return request.param
 
 
@@ -185,7 +350,27 @@ pairs = list(itertools.permutations(iris_df.columns, 2))
 
 @pytest.fixture(params=pairs, ids=list(map(str, pairs)))
 def multiindex(iris: pd.DataFrame, request: PytestFixtureRequest) -> pd.MultiIndex:
-    """Return MultiIndexes created from pairs of iris cols"""
+    """
+    Create a `pandas` MultiIndex from permutations of two columns from the Iris dataset.
+
+    This fixture uses the Iris dataset and a `pytest` request object to generate a
+    MultiIndex from permutations of column pairs. Each test receives a MultiIndex
+    created from a different column pair.
+
+    Parameters
+    ----------
+    iris : pd.DataFrame
+        DataFrame of the Iris dataset with multiple columns suitable for creating a
+        MultiIndex.
+    request : PytestFixtureRequest
+        The `pytest` fixture request context, providing the specific column pair (from
+        the fixture's parameterization) used to create the MultiIndex.
+
+    Returns
+    -------
+    pd.MultiIndex
+        A MultiIndex object created from two specified columns of the Iris DataFrame.
+    """
     a_col, b_col = request.param
     a, b = iris[a_col], iris[b_col]
     return pd.MultiIndex.from_arrays([a, b])
@@ -205,7 +390,25 @@ def multiindex(iris: pd.DataFrame, request: PytestFixtureRequest) -> pd.MultiInd
 def plot_func(
     request: PytestFixtureRequest,
 ) -> Callable[[npt.ArrayLike], npt.NDArray[Numeric]]:
-    """A variety of mathematical funcs callable on numeric numpy ndarrays"""
+    """
+    Return various mathematical functions as callables for operations on `numpy` arrays.
+
+    Each test using this fixture receives a different function, capable of performing
+    specific mathematical transformations on numeric data. Functions include sine,
+    exponential, square, and rounding transformations.
+
+    Parameters
+    ----------
+    request : PytestFixtureRequest
+        The pytest fixture request context, providing the specific mathematical function
+        to be tested.
+
+    Returns
+    -------
+    Callable[[npt.ArrayLike], npt.NDArray[Numeric]]
+        A mathematical function that takes an array-like object as input and returns a
+        numpy array with the operation applied.
+    """
     return request.param
 
 
@@ -218,13 +421,46 @@ def plot_func(
     ids=lambda arr: str(arr.dtype),
 )
 def x_values(request: PytestFixtureRequest) -> npt.NDArray[Numeric]:
-    """func inputs of different dtypes"""
+    """
+    Generate `numpy` arrays with different data types and ranges for test inputs.
+
+    This fixture parameterizes over different ranges and data types of numpy arrays,
+    specifically designed for testing functions that require numeric inputs of varying
+    precision and scale. Data types include float and integer arrays, suitable for
+    robustness testing of numerical functions.
+
+    Parameters
+    ----------
+    request : PytestFixtureRequest
+        The pytest fixture request context, providing the specific array configuration
+        to be used in the test.
+
+    Returns
+    -------
+    npt.NDArray[Numeric]
+        A numpy array of specified data type and range, ready for use in numeric tests.
+    """
     return request.param
 
 
 @pytest.fixture(params=["fig", "ax"])
 def _fig_or_ax(request: PytestFixtureRequest) -> Literal["fig", "ax"]:
-    """Either returns 'fig' or 'ax'"""
+    """
+    Fixture that parameterizes over the strings "fig" and "ax".
+
+    This fixture alternately provides the string "fig" or "ax", based on the `pytest`
+    parameterization. Useful for controlling which `matplotlib` object is tested.
+
+    Parameters
+    ----------
+    request : PytestFixtureRequest
+        The pytest fixture request context that provides either 'fig' or 'ax'.
+
+    Returns
+    -------
+    Literal["fig", "ax"]
+        A string that is either 'fig' or 'ax', determining which object to handle.
+    """
     return request.param
 
 
@@ -233,7 +469,26 @@ def mpl_plots(
     func: Callable[[npt.ArrayLike], npt.NDArray[Numeric]],
     x_values: npt.NDArray[Numeric],
 ) -> Iterable[dict[str, plt.Figure | plt.Axes]]:
-    """Returns dict of {fix, ax}, for various funcs and domains"""
+    """
+    Generate a `matplotlib` plot from a function and x-values.
+
+    This fixture creates `matplotlib` figures and axes for the given function applied to
+    x-values. It yields a dictionary containing the figure ("fig") and axes ("ax").
+    Finally, the fixture closes the figure after yielding.
+
+    Parameters
+    ----------
+    func : Callable[[npt.ArrayLike], npt.NDArray[Numeric]]
+        The function to be plotted over x_values.
+    x_values : npt.NDArray[Numeric]
+        The x-values over which the function will be plotted.
+
+    Yields
+    ------
+    dict[str, Union[plt.Figure, plt.Axes]]
+        A dictionary with the keys "fig" and "ax", each mapping to the corresponding
+        `matplotlib` object.
+    """
     x = x_values
     y = func(x)
     fig, ax = plt.subplots()
@@ -245,14 +500,52 @@ def mpl_plots(
 
 @pytest.fixture
 def mpl_axes(mpl_plots: dict[str, plt.Figure | plt.Axes]) -> plt.Axes:
-    """Returns a variety of `plt.Axes` objects"""
+    """
+    Provide a `plt.Axes` object.
+
+    Provide the `Axes` object generated from `mpl_plots`.
+
+    Parameters
+    ----------
+    mpl_plots : dict[str, Union[plt.Figure, plt.Axes]]
+        A dictionary containing `matplotlib` `Figure` and `Axes`.
+
+    Returns
+    -------
+    plt.Axes
+        The matplotlib Axes object from the mpl_plots fixture.
+
+    See Also
+    --------
+    mpl_figs : Provide a `plt.Figure` object.
+    mpl_figs_and_axes : Provide a combination of `Axes` and `Figure` objects.
+    """
     assert isinstance(mpl_plots["ax"], plt.Axes)  # for mypy
     return mpl_plots["ax"]
 
 
 @pytest.fixture
 def mpl_figs(mpl_plots: dict[str, plt.Figure | plt.Axes]) -> plt.Figure:
-    """Returns a variety of `plt.Figure` objects"""
+    """
+    Provide a `plt.Figure` object.
+
+    Provide the `Figure` object generated from `mpl_plots`.
+
+    Parameters
+    ----------
+    mpl_plots : dict[str, Union[plt.Figure, plt.Axes]]
+        A dictionary containing `matplotlib` `Figure` and `Axes`.
+
+    Returns
+    -------
+    plt.Figure
+        The matplotlib Axes object from the mpl_plots fixture.
+
+    See Also
+    --------
+    mpl_axes : Provide a `plt.Axes` object.
+    mpl_figs_and_axes : Provide a combination of `Axes` and `Figure` objects.
+    """
     assert isinstance(mpl_plots["fig"], plt.Figure)  # for mypy
     return mpl_plots["fig"]
 
@@ -261,7 +554,30 @@ def mpl_figs(mpl_plots: dict[str, plt.Figure | plt.Axes]) -> plt.Figure:
 def mpl_figs_and_axes(
     mpl_plots: dict[str, plt.Figure | plt.Axes], _fig_or_ax: Literal["fig", "ax"]
 ) -> plt.Figure | plt.Axes:
-    """Returns either the figure or the axis of various plots"""
+    """
+    Provide either a `plt.Figure` or `plt.Axes' object.
+
+    Depending on the value provided by the _fig_or_ax fixture, this fixture returns
+    either the `Figure` or the `Axes` object from `mpl_plots` for flexibility in testing
+    functions that accept either object.
+
+    Parameters
+    ----------
+    mpl_plots : dict[str, Union[plt.Figure, plt.Axes]]
+        A dictionary containing `matplotlib` `Figure` and `Axes`.
+    _fig_or_ax : Literal["fig", "ax"]
+        Controls whether to return a `Figure` or an `Axes` object.
+
+    Returns
+    -------
+    Union[plt.Figure, plt.Axes]
+        Either the `Figure` or the `Axes` object, based on `_fig_or_ax` input.
+
+    See Also
+    --------
+    mpl_axes : Provide a `plt.Axes` object.
+    mpl_figs : Provide a `plt.Figure` object.
+    """
     return mpl_plots[_fig_or_ax]
 
 
@@ -284,7 +600,22 @@ strftime_codes = [
     ids=strftime_codes,
 )  # noqa
 def strftime(request: PytestFixtureRequest) -> str:
-    """Various different strftime format codes"""
+    """
+    Provide various strftime format codes for testing datetime formatting.
+
+    This fixture iterates through a predefined list of strftime format codes, allowing
+    tests to validate different datetime formatting options.
+
+    Parameters
+    ----------
+    request : PytestFixtureRequest
+        The pytest fixture request context that provides each strftime format code.
+
+    Returns
+    -------
+    str
+        A strftime format code as a string.
+    """
     return request.param
 
 
@@ -299,18 +630,46 @@ def strftime(request: PytestFixtureRequest) -> str:
     ]
 )
 def datetime_df(request: PytestFixtureRequest) -> pd.DataFrame:
-    """DataFrame with datetime data, integer index, and str column names.
-                   A          B          C
-    0 2000-01-03 2000-01-02 2000-12-31
-    1 2000-01-04 2000-01-09 2001-12-31
-    2 2000-01-05 2000-01-16 2002-12-31
-    3 2000-01-06 2000-01-23 2003-12-31
-    4 2000-01-07 2000-01-30 2004-12-31
-    5 2000-01-10 2000-02-06 2005-12-31
-    6 2000-01-11 2000-02-13 2006-12-31
-    7 2000-01-12 2000-02-20 2007-12-31
-    8 2000-01-13 2000-02-27 2008-12-31
-    9 2000-01-14 2000-03-05 2009-12-31"""
+    """
+    Generate a DataFrame containing datetime data with different time offsets.
+
+    This fixture creates a DataFrame with three columns of dates, each with different
+    frequencies, and then adjusts these dates by a time offset provided by the `pytest`
+    parameterization.
+
+    Parameters
+    ----------
+    request : PytestFixtureRequest
+        The `pytest` fixture request context that provides the time offset to adjust the
+        datetime values in the DataFrame.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with each column representing a different frequency of datetime
+        data, adjusted by the given time offset.
+
+    Notes
+    -----
+    The resulting DataFrame has an integer index and three columns labeled "A", "B", and
+    "C", each filled with adjusted datetime values. An example structure of the
+    DataFrame, without specific adjustments applied:
+
+                A           B           C
+    0  2000-01-03  2000-01-02  2000-12-31
+    1  2000-01-04  2000-01-09  2001-12-31
+    2  2000-01-05  2000-01-16  2002-12-31
+    3  2000-01-06  2000-01-23  2003-12-31
+    4  2000-01-07  2000-01-30  2004-12-31
+    5  2000-01-10  2000-02-06  2005-12-31
+    6  2000-01-11  2000-02-13  2006-12-31
+    7  2000-01-12  2000-02-20  2007-12-31
+    8  2000-01-13  2000-02-27  2008-12-31
+    9  2000-01-14  2000-03-05  2009-12-31
+
+    These date ranges correspond to business days for 'A', weekly on Sundays for 'B',
+    and year-end dates for 'C'.
+    """
     df = pd.DataFrame(
         {
             "A": pd.date_range("2000-01-01", periods=10, freq="b"),
@@ -324,7 +683,22 @@ def datetime_df(request: PytestFixtureRequest) -> pd.DataFrame:
 
 @pytest.fixture
 def datetime_and_float_df(datetime_df: pd.DataFrame) -> pd.DataFrame:
-    """datetime_df with additional columns of random positive and negative floats"""
+    """
+    Extend the `datetime_df` fixture by adding columns of random floats.
+
+    This fixture takes the `datetime_df` fixture and appends two new columns "D" and "E"
+    containing random float values ranging from -1 to 1.
+
+    Parameters
+    ----------
+    datetime_df : pd.DataFrame
+        The DataFrame provided by the `datetime_df` fixture containing datetime data.
+
+    Returns
+    -------
+    pd.DataFrame
+        The original DataFrame augmented with two additional columns of random floats.
+    """
     datetime_df[list("DE")] = np.random.uniform(-1, 1, (10, 2))
     return datetime_df
 
@@ -332,8 +706,22 @@ def datetime_and_float_df(datetime_df: pd.DataFrame) -> pd.DataFrame:
 @pytest.fixture(autouse=True)
 def _docstring_tmp_path(request: PytestFixtureRequest) -> Iterator[None]:
     """
-    Autouse  fixture to chdir to a tmp_path for all doctests without needing to
-    explicitly call it.
+    Temporarily change the current working directory to a `tmp_path` during doctests.
+
+    This fixture is automatically used for all doctests to ensure that they operate in a
+    temporary directory without explicitly needing to be called in each doctest. It is
+    adapted from an external source to manage the working directory context.
+
+    Parameters
+    ----------
+    request : PytestFixtureRequest
+        The pytest fixture request context used to manage the temporary directory.
+
+    Yields
+    ------
+    None
+        Changes the current directory to `tmp_path` for the duration of a doctest and
+        then restores the original directory.
     """
     # Almost completely adapted from a kind soul at https://stackoverflow.com/a/46991331
     # Trigger ONLY for the doctests.

@@ -1,3 +1,12 @@
+"""
+Provides tests for various data generation functionalities.
+
+This module contains tests to ensure the correct behavior of functions designed to
+generate synthetic data and their utility in data generation scripts. It includes tests
+for random value generation, cumulative GPA calculation, email generation, and selection
+functions that handle complex logic for generating realistic test datasets.
+"""
+
 from __future__ import annotations  # for Python 3.9
 
 from pathlib import Path
@@ -7,6 +16,7 @@ import sys
 from typing import (
     Any,
     Callable,
+    Literal,
 )
 
 from faker import Faker
@@ -34,6 +44,21 @@ seeds = [0, 1, 987_654_321]
 
 @pytest.fixture(params=seeds, ids=list(map("seed={:_}".format, seeds)))
 def set_random_seed(request: pytest.FixtureRequest) -> int:
+    """
+    Set the random seeds for tests.
+
+    A `pytest` fixture to set a deterministic random seed for reproducibility of tests.
+
+    Parameters
+    ----------
+    request : pytest.FixtureRequest
+        The fixture request context.
+
+    Returns
+    -------
+    int
+        The seed used for the random number generators.
+    """
     random.seed(request.param, version=2)
     np.random.seed(request.param)
     Faker.seed(request.param)
@@ -41,7 +66,37 @@ def set_random_seed(request: pytest.FixtureRequest) -> int:
 
 
 class TestDataGeneration:
+    """
+    Tests for verifying the correct functionality of the data generation utilities.
+
+    Methods
+    -------
+    test_make_probs_sum_to_one:
+        Ensures probabilities in a dictionary sum to one after normalization.
+    test_sample_from_dict:
+        Tests sampling from a weighted dictionary.
+    test_EV:
+        Validates expected value calculation from a probability distribution.
+    test_generate_cumulative_GPAs_expected_values:
+        Checks the generation of cumulative GPAs for specific seeds.
+    test_generate_cumulative_GPAs_expected_attributes:
+        Verifies the attributes of generated GPAs such as mean and standard deviation.
+    test_generate_expected_emails:
+        Tests the generation of unique email addresses.
+    test_duplicated_existing_emails:
+        Ensures the function raises an error for duplicated existing emails.
+    test_select_categories_expected_values:
+        Tests the correct selection of categories based on predefined probabilities.
+    test_select_tags_expected_values:
+        Confirms that the selection of tags meets expected conditions.
+    test_selected_tags_mutually_exclusive:
+        Checks that selected tags are mutually exclusive where applicable.
+    test_assigned_staff_works:
+        Validates the correct assignment of staff based on role probabilities.
+    """
+
     def test_make_probs_sum_to_one(self) -> None:
+        """Test that the function correctly adjusts values to sum to one."""
         d1 = {"heads": 0.5, "tails": 0.5}
         assert d1 == make_probs_sum_to_one(d1)
 
@@ -53,6 +108,7 @@ class TestDataGeneration:
         assert make_probs_sum_to_one(d3) == pytest.approx(d3_expected)
 
     def test_sample_from_dict(self) -> None:
+        """Test sampling from a dict with probabilities produces consistent output."""
         weights_dict = {"heads": 49.5, "tails": 49.5, "you broke the coin": 1}
         sample = sample_from_dict(weights_dict, 10_000)
         assert "you broke the coin" in sample
@@ -60,16 +116,29 @@ class TestDataGeneration:
         assert sample.shape == (10_000,)
 
     def test_EV(self) -> None:
+        """Verify that the expected value calculation is correct."""
         assert EV({10: 1}) == 10
         assert EV({1: 1 / 6, 2: 2 / 3, 3: 1 / 6}) == 2
 
     def test_EV_all_zero_probs(self) -> None:
+        """Test raises a `ZeroDivisionError` when all probabilities are zero."""
         with pytest.raises(ZeroDivisionError):
             EV({1: 0})
 
     def test_generate_cumulative_GPAs_expected_values(
         self, set_random_seed: int
     ) -> None:
+        """
+        Test that seeds produce their expected outcomes.
+
+        Test the generation of cumulative GPAs for specific seeds and verify they match
+        expected outcomes.
+
+        Parameters
+        ----------
+        set_random_seed : int
+            The seed used to generate deterministic results.
+        """
         expected = {
             0: np.array([1.57]),
             1: np.array([0.00]),
@@ -79,6 +148,7 @@ class TestDataGeneration:
         assert generate_cumulative_gpas() == expected[set_random_seed]
 
     def test_generate_cumulative_GPAs_expected_attributes(self) -> None:
+        """Test stat attributes of generated cumulative GPAs."""
         gpas = generate_cumulative_gpas(length=10_000)
 
         # Ensure the right shape
@@ -112,7 +182,12 @@ class TestDataGeneration:
     )
 
     def test_generate_expected_emails(self) -> None:
+        """
+        Ensure expected email addresses are generated.
 
+        Ensure that the email generation function produces expected results and handles
+        non-ASCII characters properly.
+        """
         emails = generate_emails(self.names)
         expected_emails = [
             "john.doe@example.edu",
@@ -156,12 +231,29 @@ class TestDataGeneration:
         assert not pd.concat([emails, emails2]).duplicated().any()
 
     def test_duplicated_existing_emails(self) -> None:
+        """
+        Test `ValueError` on duplicate email addresses.
+
+        Confirm that the function raises an error when attempting to generate emails
+        that would result in duplicates.
+        """
         with pytest.raises(ValueError, match="duplicate addresses:"):
             generate_emails(
                 self.names, existing_emails=pd.Series(["foo.bar@example.edu"] * 2)
             )
 
     def test_select_categories_expected_values(self, set_random_seed: int) -> None:
+        """
+        Test expected outcome for given seeds.
+
+        Test that category selection is consistent with expected results for given
+        seeds.
+
+        Parameters
+        ----------
+        set_random_seed : int
+            The seed used to generate deterministic results.
+        """
         expected_values = {
             0: (
                 "Main Campus, Graduated: No, Graduate, Completion Rate: >= 66.67%,"
@@ -176,6 +268,14 @@ class TestDataGeneration:
         assert select_categories()[0] == expected_values[set_random_seed]
 
     def test_select_tags_expected_values(self, set_random_seed: int) -> None:
+        """
+        Ensure that tag selection is consistent with predefined probabilities.
+
+        Parameters
+        ----------
+        set_random_seed : int
+            The seed used to generate deterministic results.
+        """
         expected_values = {
             0: [None, None, "Honor Student", None],
             1: ["At Risk", "Transfer", None, "Needs Tutoring"],
@@ -185,6 +285,7 @@ class TestDataGeneration:
         assert (tags == expected_values[set_random_seed]).all()
 
     def test_selected_tags_mutually_exclusive(self) -> None:
+        """Test that mutually exclusive tags are not selected together for a student."""
         tags = pd.Series(select_tags(100_000))
         mutually_exclusive_tags = [("Part-Time", "Full-Time")]
         for mutually_exclusive_tag_set in mutually_exclusive_tags:
@@ -213,12 +314,44 @@ class TestDataGeneration:
         params=faker_locales_params, ids=list(map(str, faker_locales_params))
     )
     def faker_locales(self, request: pytest.FixtureRequest) -> dict[str, float] | None:
+        """
+        Return a locales dict or `None`.
+
+        A `pytest` fixture to configure `Faker` with different locales based on a
+        specified probability distribution.
+
+        Parameters
+        ----------
+        request : pytest.FixtureRequest
+            The fixture request context.
+
+        Returns
+        -------
+        dict[str, float] | None
+            The locale probabilities used for generating data, or None if default
+            locales are used.
+        """
         return request.param
 
     @pytest.fixture
     def staff_df(
         self, set_random_seed: int, faker_locales: dict[str, float] | None
     ) -> pd.DataFrame:
+        """
+        Generate a DataFrame of fake staff data with specified roles and locales.
+
+        Parameters
+        ----------
+        set_random_seed : int
+            The seed used to ensure reproducible results.
+        faker_locales : dict[str, float] | None
+            The locales and their probabilities used for data generation.
+
+        Returns
+        -------
+        pd.DataFrame
+            The generated staff DataFrame.
+        """
         return generate_staff_df(
             Faker(faker_locales), self.assigned_staff_role_probabilities, n_staff=1_000
         )
@@ -229,7 +362,21 @@ class TestDataGeneration:
         staff_df: pd.DataFrame,
         faker_locales: dict[str, float] | None,
     ) -> None:
+        """
+        Test for expected outcomes.
 
+        Test that the function correctly assigns staff based on predefined roles and
+        their associated probabilities.
+
+        Parameters
+        ----------
+        set_random_seed : int
+            The seed used to ensure reproducible results.
+        staff_df : pd.DataFrame
+            The DataFrame containing staff data.
+        faker_locales : dict[str, float] | None
+            The locales used during staff data generation.
+        """
         expected = (
             {
                 0: "Michelle Kaiser (Advisor), Luke Miller (Career Advisor)",
@@ -250,7 +397,30 @@ class TestDataGeneration:
 
 
 class TestReportGeneration:
+    """
+    Tests related to the report generation functionality in the data generation scripts.
+
+    Methods
+    -------
+    test_generate_fake_enrollments:
+        Tests the function that generates fake enrollment records.
+    test_generate_fake_enrollments_cli:
+        Tests the command-line interface (CLI) for generating fake enrollments.
+    """
+
     def test_generate_fake_enrollments(self, set_random_seed: int) -> None:
+        """
+        Test the function `generate_fake_enrollments`.
+
+        Test the fake enrollments generation function for creating a specified number
+        of records based on the input seed.
+
+        Parameters
+        ----------
+        set_random_seed : int
+            The seed used to ensure reproducible results. The function generates between
+            1,000 and 10,000 records, adjusted by the seed value.
+        """
         # Base `n_records` on the seed
         n_records = set_random_seed + 1000
         n_records %= 10**5  # But cap it at 10,000 records
@@ -267,11 +437,28 @@ class TestReportGeneration:
     def test_generate_fake_enrollments_cli(
         self,
         set_random_seed: int,
-        random_seed_flag: str,
-        n_records_flag: str,
-        output_flag: str,
+        random_seed_flag: Literal["-r", "--random-seed"],
+        n_records_flag: Literal["-n", "--n-records"],
+        output_flag: Literal["-o", "--output"],
         tmp_path: Path,
     ) -> None:
+        """
+        Test the CLI for generating fake enrollments with specified options.
+
+        Parameters
+        ----------
+        set_random_seed : int
+            The seed used to ensure reproducible results.
+        random_seed_flag : Literal["-r", "--random-seed"]
+            The CLI flag to specify the random seed. Either "-r" or "--random-seed".
+        n_records_flag : Literal["-n", "--n-records"]
+            The CLI flag to specify the number of records to generate. Either "-n" or
+            "--n-records".
+        output_flag : Literal["-o", "--output"]
+            The CLI flag to specify the output directory. Either "-o" or "--output".
+        tmp_path : Path
+            The temporary path to store the output files.
+        """
         # Base `n_records` on the seed
         n_records = set_random_seed + 1000
         n_records %= 10**5  # But cap it at 10,000 records
@@ -287,7 +474,6 @@ class TestReportGeneration:
         subprocess.run(
             [
                 sys.executable,
-                # r"EAB_tools\tests\_testing\test_data_generation.py",
                 str(script_location),
                 random_seed_flag,
                 str(set_random_seed),

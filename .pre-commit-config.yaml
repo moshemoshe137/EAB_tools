@@ -74,9 +74,6 @@ repos:
         additional_dependencies:
           - toml
           - tomli
-        # Don't let `pre-commit` pass filenames
-        # Instead, use `pydocstyle`'s default settings from pyproject.toml
-        pass_filenames: false
 
   - repo: https://github.com/kynan/nbstripout
     rev: 0.7.1
